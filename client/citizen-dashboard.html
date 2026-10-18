@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Citizen Dashboard - Urban Flood &amp; Smart Drain Monitor</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+
+  <div id="main-header"></div>
+
+  <div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar" id="dashboard-sidebar"></aside>
+
+    <!-- Main Content -->
+    <main class="dashboard-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+          <h2 class="fw-bold text-dark mb-1">Citizen Services Portal</h2>
+          <p class="text-muted small mb-0">Track your reported drainage complaints, municipal actions, and local flood risk alerts</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/report-problem.html" class="btn btn-primary fw-bold shadow-sm d-flex align-items-center gap-2">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>Report a Problem</span>
+          </a>
+          <a href="/risk-map.html" class="btn btn-outline-secondary fw-semibold">
+            <i class="bi bi-map me-1"></i> Live Map
+          </a>
+        </div>
+      </div>
+
+      <!-- High-Risk Alert Notice Banner if any active cluster in area -->
+      <div id="citizen-alert-banner" class="alert alert-danger d-none shadow-sm border-danger border-opacity-25 mb-4">
+        <div class="d-flex align-items-center gap-3">
+          <div class="fs-2 text-danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div class="flex-grow-1">
+            <div class="fw-bold" id="alert-banner-title">High-Risk Drainage Alert in Your Area</div>
+            <div class="small" id="alert-banner-desc">Multiple active waterlogging incidents detected near your registered location. Please exercise caution.</div>
+          </div>
+          <a href="/risk-map.html" class="btn btn-danger btn-sm fw-semibold">View On Map</a>
+        </div>
+      </div>
+
+      <!-- Summary Stat Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+              <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="count-total">0</div>
+              <div class="stat-label">Total Submitted</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-info bg-opacity-10 text-info">
+              <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="count-pending">0</div>
+              <div class="stat-label">Under Inspection</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+              <i class="bi bi-tools"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="count-cleaning">0</div>
+              <div class="stat-label">Cleaning In Progress</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-success bg-opacity-10 text-success">
+              <i class="bi bi-check2-circle"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="count-completed">0</div>
+              <div class="stat-label">Resolved / Cleaned</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Reports Section -->
+      <div class="card card-custom p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">My Recent Submissions</h5>
+          <a href="/my-reports.html" class="btn btn-sm btn-outline-primary fw-semibold">View Full History</a>
+        </div>
+
+        <div id="reports-loading" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted small mt-2">Loading your drainage reports...</p>
+        </div>
+
+        <div id="reports-empty" class="text-center py-5 d-none">
+          <i class="bi bi-inbox text-muted fs-1 mb-2"></i>
+          <h6 class="fw-bold text-dark">No Drainage Complaints Submitted Yet</h6>
+          <p class="text-muted small max-w-500 mx-auto">
+            Help your city stay flood-free! If you notice a blocked drain, road waterlogging, or overflowing manhole, report it immediately.
+          </p>
+          <a href="/report-problem.html" class="btn btn-primary btn-sm fw-bold mt-2">
+            <i class="bi bi-plus-circle me-1"></i> Report a Problem
+          </a>
+        </div>
+
+        <div class="table-responsive d-none" id="reports-table-container">
+          <table class="table table-hover align-middle">
+            <thead class="table-light small text-uppercase text-muted">
+              <tr>
+                <th>Report ID</th>
+                <th>Problem Type</th>
+                <th>Location</th>
+                <th>Water Level</th>
+                <th>Risk Assessment</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="reports-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Auth.requireAuth(['citizen', 'admin'])) return;
+      Auth.renderSidebar('citizen-dashboard');
+
+      try {
+        const res = await API.get('/api/reports/my-reports');
+        document.getElementById('reports-loading').classList.add('d-none');
+
+        const reports = res.reports || [];
+        
+        // Compute counts
+        document.getElementById('count-total').textContent = reports.length;
+        document.getElementById('count-pending').textContent = reports.filter(r => r.status === 'UNDER INSPECTION' || r.status === 'SUBMITTED').length;
+        document.getElementById('count-cleaning').textContent = reports.filter(r => r.status === 'CLEANING STARTED').length;
+        document.getElementById('count-completed').textContent = reports.filter(r => r.status === 'COMPLETED').length;
+
+        if (reports.length === 0) {
+          document.getElementById('reports-empty').classList.remove('d-none');
+          return;
+        }
+
+        document.getElementById('reports-table-container').classList.remove('d-none');
+        const tbody = document.getElementById('reports-tbody');
+        tbody.innerHTML = '';
+
+        reports.slice(0, 10).forEach(r => {
+          const dateStr = new Date(r.createdAt).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          });
+
+          const statusClasses = {
+            'SUBMITTED': 'badge-status-SUBMITTED',
+            'UNDER INSPECTION': 'badge-status-UNDER_INSPECTION',
+            'CLEANING STARTED': 'badge-status-CLEANING_STARTED',
+            'COMPLETED': 'badge-status-COMPLETED',
+            'REJECTED': 'badge-status-REJECTED'
+          };
+
+          const riskBadgeClasses = {
+            'HIGH': 'badge-risk-high',
+            'MEDIUM': 'badge-risk-medium',
+            'LOW': 'badge-risk-low'
+          };
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="fw-bold text-primary font-monospace">${r.reportId}</td>
+            <td>
+              <div class="fw-semibold text-dark">${r.problemType}</div>
+            </td>
+            <td class="small text-muted text-truncate" style="max-width:180px;">${r.locationName}</td>
+            <td>
+              <span class="badge bg-light text-dark border">${r.waterLevel}</span>
+            </td>
+            <td>
+              <span class="badge-risk ${riskBadgeClasses[r.riskLevel] || 'badge-risk-low'}">
+                ${r.riskLevel} (${r.riskScore}/100)
+              </span>
+            </td>
+            <td>
+              <span class="badge-status ${statusClasses[r.status] || ''}">${r.status}</span>
+            </td>
+            <td class="small text-muted">${dateStr}</td>
+            <td>
+              <a href="/report-details.html?id=${r.reportId}" class="btn btn-sm btn-outline-primary">
+                Details
+              </a>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Check if there are unread high-risk notifications to display banner
+        const notifRes = await API.get('/api/notifications');
+        if (notifRes.success && notifRes.notifications) {
+          const highRiskNotif = notifRes.notifications.find(n => n.type === 'HIGH_RISK_ALERT');
+          if (highRiskNotif) {
+            document.getElementById('alert-banner-title').textContent = highRiskNotif.title;
+            document.getElementById('alert-banner-desc').textContent = highRiskNotif.message;
+            document.getElementById('citizen-alert-banner').classList.remove('d-none');
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('reports-loading').innerHTML = `
+          <div class="alert alert-danger mb-0">${err.message || 'Failed to load reports'}</div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

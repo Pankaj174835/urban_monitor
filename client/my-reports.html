@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Reports History - Urban Flood &amp; Smart Drain Monitor</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body class="bg-light">
+
+  <div id="main-header"></div>
+
+  <div class="dashboard-wrapper">
+    <aside class="dashboard-sidebar" id="dashboard-sidebar"></aside>
+
+    <main class="dashboard-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small">
+              <li class="breadcrumb-item"><a href="/citizen-dashboard.html">Dashboard</a></li>
+              <li class="breadcrumb-item active">My Complaints History</li>
+            </ol>
+          </nav>
+          <h2 class="fw-bold text-dark mb-1">My Submitted Drainage Reports</h2>
+          <p class="text-muted small mb-0">Track verification progress, assigned maintenance units, and resolution statuses</p>
+        </div>
+        <div>
+          <a href="/report-problem.html" class="btn btn-primary fw-bold shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i> Report a Problem
+          </a>
+        </div>
+      </div>
+
+      <!-- Filters & Search Bar -->
+      <div class="card card-custom p-3 mb-4">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-5">
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" id="search-input" placeholder="Search by Report ID, location name or description...">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filter-status">
+              <option value="ALL">All Statuses</option>
+              <option value="SUBMITTED">Submitted</option>
+              <option value="UNDER INSPECTION">Under Inspection</option>
+              <option value="CLEANING STARTED">Cleaning Started</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="filter-problem">
+              <option value="ALL">All Problem Types</option>
+              <option value="Blocked Drain">Blocked Drain</option>
+              <option value="Waterlogging">Waterlogging</option>
+              <option value="Drain Overflow">Drain Overflow</option>
+              <option value="Drainage Damage">Drainage Damage</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-1">
+            <button class="btn btn-outline-secondary w-100" id="btn-reset" title="Reset Filters">
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports List Container -->
+      <div id="reports-loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted small mt-2">Loading your report records...</p>
+      </div>
+
+      <div id="reports-empty" class="card card-custom p-5 text-center d-none">
+        <i class="bi bi-clipboard-x text-muted fs-1 mb-2"></i>
+        <h5 class="fw-bold text-dark">No Matching Reports Found</h5>
+        <p class="text-muted small">No complaints matched your search or filter criteria.</p>
+      </div>
+
+      <div class="row g-3" id="reports-grid"></div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script>
+    let allUserReports = [];
+
+    function renderReports(reports) {
+      const grid = document.getElementById('reports-grid');
+      const emptyBox = document.getElementById('reports-empty');
+      grid.innerHTML = '';
+
+      if (!reports || reports.length === 0) {
+        emptyBox.classList.remove('d-none');
+        return;
+      }
+
+      emptyBox.classList.add('d-none');
+
+      const statusBadges = {
+        'SUBMITTED': 'badge-status-SUBMITTED',
+        'UNDER INSPECTION': 'badge-status-UNDER_INSPECTION',
+        'CLEANING STARTED': 'badge-status-CLEANING_STARTED',
+        'COMPLETED': 'badge-status-COMPLETED',
+        'REJECTED': 'badge-status-REJECTED'
+      };
+
+      const riskBadges = {
+        'HIGH': 'badge-risk-high',
+        'MEDIUM': 'badge-risk-medium',
+        'LOW': 'badge-risk-low'
+      };
+
+      reports.forEach(r => {
+        const dateStr = new Date(r.createdAt).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        const col = document.createElement('div');
+        col.className = 'col-md-6 col-xl-4';
+        col.innerHTML = `
+          <div class="card card-custom h-100 d-flex flex-column">
+            <div class="position-relative overflow-hidden" style="height:140px;border-top-left-radius:0.75rem;border-top-right-radius:0.75rem;background:#0f172a;">
+              <img src="${r.photoUrl || '/assets/images/placeholder-drain.svg'}" alt="Evidence" style="width:100%;height:100%;object-fit:cover;">
+              <div class="position-absolute top-0 start-0 m-2">
+                <span class="badge ${riskBadges[r.riskLevel] || 'badge-risk-low'}">${r.riskLevel} RISK (${r.riskScore}/100)</span>
+              </div>
+              <div class="position-absolute top-0 end-0 m-2">
+                <span class="badge ${statusBadges[r.status] || ''}">${r.status}</span>
+              </div>
+            </div>
+            <div class="p-3 d-flex flex-column flex-grow-1">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold font-monospace text-primary">${r.reportId}</span>
+                <span class="small text-muted">${dateStr}</span>
+              </div>
+              <h6 class="fw-bold text-dark mb-1">${r.problemType}</h6>
+              <div class="small text-muted mb-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${r.locationName}</div>
+              <p class="small text-secondary flex-grow-1 mb-3" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                ${r.description || ''}
+              </p>
+              <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                <span class="small text-muted">Water: <strong class="text-dark">${r.waterLevel}</strong></span>
+                <a href="/report-details.html?id=${r.reportId}" class="btn btn-sm btn-outline-primary fw-semibold">
+                  View Timeline &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+        grid.appendChild(col);
+      });
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('search-input').value.toLowerCase().trim();
+      const status = document.getElementById('filter-status').value;
+      const problem = document.getElementById('filter-problem').value;
+
+      const filtered = allUserReports.filter(r => {
+        const matchesSearch = !search ||
+          r.reportId.toLowerCase().includes(search) ||
+          r.locationName.toLowerCase().includes(search) ||
+          (r.description && r.description.toLowerCase().includes(search));
+
+        const matchesStatus = status === 'ALL' || r.status === status;
+        const matchesProblem = problem === 'ALL' || r.problemType === problem;
+
+        return matchesSearch && matchesStatus && matchesProblem;
+      });
+
+      renderReports(filtered);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Auth.requireAuth(['citizen', 'admin'])) return;
+      Auth.renderSidebar('my-reports');
+
+      try {
+        const res = await API.get('/api/reports/my-reports');
+        document.getElementById('reports-loading').classList.add('d-none');
+        allUserReports = res.reports || [];
+        renderReports(allUserReports);
+
+        document.getElementById('search-input').addEventListener('input', applyFilters);
+        document.getElementById('filter-status').addEventListener('change', applyFilters);
+        document.getElementById('filter-problem').addEventListener('change', applyFilters);
+        document.getElementById('btn-reset').addEventListener('click', () => {
+          document.getElementById('search-input').value = '';
+          document.getElementById('filter-status').value = 'ALL';
+          document.getElementById('filter-problem').value = 'ALL';
+          renderReports(allUserReports);
+        });
+      } catch (err) {
+        document.getElementById('reports-loading').innerHTML = `
+          <div class="alert alert-danger mb-0">${err.message || 'Error loading reports'}</div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

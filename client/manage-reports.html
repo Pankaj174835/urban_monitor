@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Citizen Reports - Urban Flood &amp; Smart Drain Monitor</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    .report-thumb {
+      width: 52px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid #cbd5e1;
+      transition: transform 0.15s ease;
+    }
+    .report-thumb:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <div id="main-header"></div>
+
+  <div class="dashboard-wrapper">
+    <aside class="dashboard-sidebar" id="dashboard-sidebar"></aside>
+
+    <main class="dashboard-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small">
+              <li class="breadcrumb-item"><a href="/admin-dashboard.html">Admin Dashboard</a></li>
+              <li class="breadcrumb-item active">All Citizen Reports</li>
+            </ol>
+          </nav>
+          <div class="d-flex align-items-center gap-2">
+            <h2 class="fw-bold text-dark mb-0">All Citizen Reports</h2>
+            <span class="badge bg-primary fs-6" id="badge-total-count">0 Reports</span>
+          </div>
+          <p class="text-muted small mb-0 mt-1">Complete municipal registry of all citizen drainage complaints across the city &mdash; triage, verify, prioritize, and complete field operations</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/risk-map.html" class="btn btn-outline-secondary btn-sm fw-semibold d-flex align-items-center gap-1">
+            <i class="bi bi-map"></i>
+            <span>Risk Map</span>
+          </a>
+          <button class="btn btn-primary btn-sm fw-semibold d-flex align-items-center gap-1" id="btn-refresh">
+            <i class="bi bi-arrow-repeat"></i>
+            <span>Refresh Table</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters, Search & Sorting Toolbar -->
+      <div class="card card-custom p-3 mb-4">
+        <div class="row g-2 align-items-center">
+          <!-- Search input -->
+          <div class="col-lg-3 col-md-6">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" id="search-input" placeholder="Search ID, citizen, landmark, desc...">
+            </div>
+          </div>
+          <!-- Status Filter -->
+          <div class="col-sm-6 col-lg-2">
+            <select class="form-select form-select-sm" id="filter-status">
+              <option value="ALL">Status: All</option>
+              <option value="SUBMITTED">Submitted</option>
+              <option value="UNDER INSPECTION">Under Inspection</option>
+              <option value="CLEANING STARTED">Cleaning Started</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+          <!-- Priority Filter -->
+          <div class="col-sm-6 col-lg-2">
+            <select class="form-select form-select-sm" id="filter-priority">
+              <option value="ALL">Priority: All</option>
+              <option value="CRITICAL">Critical</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+          </div>
+          <!-- Problem Type Filter -->
+          <div class="col-sm-6 col-lg-2">
+            <select class="form-select form-select-sm" id="filter-problem">
+              <option value="ALL">Problem: All</option>
+              <option value="Blocked Drain">Blocked Drain</option>
+              <option value="Waterlogging">Waterlogging</option>
+              <option value="Drain Overflow">Drain Overflow</option>
+              <option value="Drainage Damage">Drainage Damage</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <!-- Date Filter -->
+          <div class="col-sm-6 col-lg-1">
+            <select class="form-select form-select-sm" id="filter-date">
+              <option value="ALL">Date: All</option>
+              <option value="TODAY">Today</option>
+              <option value="LAST_7_DAYS">Last 7d</option>
+              <option value="LAST_30_DAYS">Last 30d</option>
+            </select>
+          </div>
+          <!-- Sorting -->
+          <div class="col-sm-6 col-lg-1">
+            <select class="form-select form-select-sm" id="sort-by">
+              <option value="NEWEST">Newest</option>
+              <option value="OLDEST">Oldest</option>
+              <option value="RISK_HIGH">Risk &darr;</option>
+              <option value="PRIORITY_HIGH">Priority</option>
+            </select>
+          </div>
+          <!-- Reset button -->
+          <div class="col-sm-6 col-lg-1">
+            <button class="btn btn-sm btn-outline-secondary w-100" id="btn-reset" title="Reset All Filters">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Complaints Management Table -->
+      <div class="card card-custom p-0 overflow-hidden mb-4">
+        <div id="table-loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted small mt-2">Loading citizen complaints from MongoDB...</p>
+        </div>
+
+        <div id="table-empty" class="text-center py-5 d-none">
+          <i class="bi bi-inbox text-muted fs-1 mb-2"></i>
+          <h6 class="fw-bold text-dark">No Complaints Found</h6>
+          <p class="text-muted small">No citizen reports matched the specified filters or database is currently empty.</p>
+        </div>
+
+        <div class="table-responsive d-none" id="table-wrapper">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase text-muted border-bottom">
+              <tr>
+                <th>Photo</th>
+                <th>Report ID</th>
+                <th>Citizen</th>
+                <th>Problem &amp; Description</th>
+                <th>Address &amp; GPS</th>
+                <th>Water</th>
+                <th>Submitted</th>
+                <th>AI Risk</th>
+                <th>Priority</th>
+                <th>Verification</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="reports-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Table Footer: Pagination & Counts -->
+        <div class="p-3 border-top bg-light d-flex flex-wrap justify-content-between align-items-center gap-2" id="pagination-bar">
+          <div class="small text-muted" id="pagination-info">Showing 0 of 0 complaints</div>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0" id="pagination-controls"></ul>
+          </nav>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: View Photo Evidence -->
+  <div class="modal fade" id="modalPhotoView" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="photoModalTitle">Site Photograph</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center p-0 bg-dark">
+          <img id="photoModalImg" src="" alt="Live evidence" style="max-height:75vh;width:100%;object-fit:contain;">
+        </div>
+        <div class="modal-footer justify-content-between">
+          <span class="small text-muted" id="photoModalCaption"></span>
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Verify / Reject -->
+  <div class="modal fade" id="modalVerify" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modalVerifyTitle">Verify Complaint</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="verify-report-id">
+          <p class="small text-muted">Verify validity or reject duplicate/inaccurate drainage complaint.</p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Decision Action</label>
+            <select class="form-select" id="verify-action">
+              <option value="VERIFY">VERIFY &mdash; Advance to Under Inspection</option>
+              <option value="REJECT">REJECT &mdash; Dismiss Complaint</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Inspection Notes</label>
+            <textarea class="form-control" id="verify-notes" rows="3" placeholder="Enter findings from initial verification..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold" id="btn-save-verify">Save Verification</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Priority Override -->
+  <div class="modal fade" id="modalPriority" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modalPriorityTitle">Override Priority</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="priority-report-id">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Priority Level</label>
+            <select class="form-select" id="priority-select">
+              <option value="CRITICAL">CRITICAL &mdash; Immediate field response</option>
+              <option value="HIGH">HIGH &mdash; Urgent dispatch within 24h</option>
+              <option value="MEDIUM">MEDIUM &mdash; Standard municipal queue</option>
+              <option value="LOW">LOW &mdash; Routine scheduled maintenance</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Documented Reason (Required for audit)</label>
+            <textarea class="form-control" id="priority-reason" rows="3" placeholder="Specify why priority is being changed..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold" id="btn-save-priority">Commit Priority</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Update Complaint Status & Complete Lifecycle -->
+  <div class="modal fade" id="modalStatus" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modalStatusTitle">Update Complaint Status</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="status-report-id">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Lifecycle State</label>
+            <select class="form-select" id="status-select">
+              <option value="SUBMITTED">SUBMITTED</option>
+              <option value="UNDER INSPECTION">UNDER INSPECTION</option>
+              <option value="CLEANING STARTED">CLEANING STARTED</option>
+              <option value="COMPLETED">COMPLETED &mdash; Mark Work as Completed</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Status / Progress Notes</label>
+            <textarea class="form-control" id="status-notes" rows="2" placeholder="Record verification findings, cleaning progress, or work orders..."></textarea>
+          </div>
+          <div class="mb-3 border-top pt-2" id="completion-fields">
+            <label class="form-label fw-semibold small text-muted">Resolution Details (Used when marking COMPLETED)</label>
+            <input type="text" class="form-control mb-2" id="status-completion-notes" placeholder="Resolution notes (e.g. Silt dredged, drain cleared, grating restored)">
+            <input type="text" class="form-control" id="status-completion-evidence" placeholder="Evidence URL (defaults to report photo)">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold" id="btn-save-status">Commit Status Change</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add Administrative Note -->
+  <div class="modal fade" id="modalAdminNote" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="modalNoteTitle">Add Administrative Note</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="note-report-id">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Internal Administrative Note</label>
+            <textarea class="form-control" id="internal-note-text" rows="3" placeholder="Enter administrative observations, contractor instructions, or audit details..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold" id="btn-save-note">Save Note</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.IO & Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script>
+    let allReports = [];
+    let filteredReports = [];
+    let currentPage = 1;
+    const pageSize = 10;
+    let photoModalObj, modalVerifyObj, modalPriorityObj, modalStatusObj, modalNoteObj;
+
+    async function loadReports() {
+      try {
+        document.getElementById('table-loading').classList.remove('d-none');
+        document.getElementById('table-wrapper').classList.add('d-none');
+        document.getElementById('table-empty').classList.add('d-none');
+
+        const res = await API.get('/api/reports');
+        document.getElementById('table-loading').classList.add('d-none');
+
+        allReports = res.reports || [];
+        document.getElementById('badge-total-count').textContent = `${allReports.length} Reports`;
+        applyFilters();
+      } catch (err) {
+        document.getElementById('table-loading').innerHTML = `
+          <div class="alert alert-danger mb-0">${err.message || 'Error fetching complaints'}</div>
+        `;
+      }
+    }
+
+    function viewPhotoModal(url, reportId) {
+      document.getElementById('photoModalTitle').textContent = `Evidence: ${reportId}`;
+      document.getElementById('photoModalImg').src = url;
+      document.getElementById('photoModalCaption').textContent = `Live site captured photo for report ${reportId}`;
+      photoModalObj.show();
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('search-input').value.toLowerCase().trim();
+      const status = document.getElementById('filter-status').value;
+      const priority = document.getElementById('filter-priority').value;
+      const problem = document.getElementById('filter-problem').value;
+      const dateFilter = document.getElementById('filter-date').value;
+      const sortBy = document.getElementById('sort-by').value;
+
+      const now = Date.now();
+      const oneDay = 24 * 60 * 60 * 1000;
+
+      filteredReports = allReports.filter(r => {
+        const matchesSearch = !search ||
+          (r.reportId && r.reportId.toLowerCase().includes(search)) ||
+          (r.citizenName && r.citizenName.toLowerCase().includes(search)) ||
+          (r.locationName && r.locationName.toLowerCase().includes(search)) ||
+          (r.description && r.description.toLowerCase().includes(search));
+
+        const matchesStatus = status === 'ALL' || r.status === status;
+        const matchesPriority = priority === 'ALL' || r.priority === priority;
+        const matchesProblem = problem === 'ALL' || r.problemType === problem;
+
+        let matchesDate = true;
+        if (dateFilter !== 'ALL') {
+          const reportDate = new Date(r.createdAt).getTime();
+          if (dateFilter === 'TODAY') {
+            matchesDate = (now - reportDate) <= oneDay;
+          } else if (dateFilter === 'LAST_7_DAYS') {
+            matchesDate = (now - reportDate) <= (7 * oneDay);
+          } else if (dateFilter === 'LAST_30_DAYS') {
+            matchesDate = (now - reportDate) <= (30 * oneDay);
+          }
+        }
+
+        return matchesSearch && matchesStatus && matchesPriority && matchesProblem && matchesDate;
+      });
+
+      // Sorting
+      const priorityWeight = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+      filteredReports.sort((a, b) => {
+        if (sortBy === 'NEWEST') return new Date(b.createdAt) - new Date(a.createdAt);
+        if (sortBy === 'OLDEST') return new Date(a.createdAt) - new Date(b.createdAt);
+        if (sortBy === 'RISK_HIGH') return (b.riskScore || 0) - (a.riskScore || 0);
+        if (sortBy === 'PRIORITY_HIGH') return (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
+        return 0;
+      });
+
+      currentPage = 1;
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('reports-tbody');
+      tbody.innerHTML = '';
+
+      if (!filteredReports || filteredReports.length === 0) {
+        document.getElementById('table-wrapper').classList.add('d-none');
+        document.getElementById('table-empty').classList.remove('d-none');
+        document.getElementById('pagination-info').textContent = 'Showing 0 of 0 complaints';
+        document.getElementById('pagination-controls').innerHTML = '';
+        return;
+      }
+
+      document.getElementById('table-empty').classList.add('d-none');
+      document.getElementById('table-wrapper').classList.remove('d-none');
+
+      // Pagination slice
+      const total = filteredReports.length;
+      const totalPages = Math.ceil(total / pageSize) || 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, total);
+      const pageReports = filteredReports.slice(startIndex, endIndex);
+
+      document.getElementById('pagination-info').textContent = `Showing ${startIndex + 1} to ${endIndex} of ${total} complaints`;
+
+      renderPagination(totalPages);
+
+      const statusBadges = {
+        'SUBMITTED': 'badge-status-SUBMITTED',
+        'UNDER INSPECTION': 'badge-status-UNDER_INSPECTION',
+        'CLEANING STARTED': 'badge-status-CLEANING_STARTED',
+        'COMPLETED': 'badge-status-COMPLETED',
+        'REJECTED': 'badge-status-REJECTED'
+      };
+
+      const riskBadges = {
+        'HIGH': 'badge-risk-high',
+        'MEDIUM': 'badge-risk-medium',
+        'LOW': 'badge-risk-low'
+      };
+
+      const priorityBadges = {
+        'CRITICAL': 'badge-priority-CRITICAL',
+        'HIGH': 'badge-priority-HIGH',
+        'MEDIUM': 'badge-priority-MEDIUM',
+        'LOW': 'badge-priority-LOW'
+      };
+
+      pageReports.forEach(r => {
+        const dateStr = new Date(r.createdAt).toLocaleDateString('en-IN', {
+          day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+
+        // Verification state
+        let verificationLabel = '<span class="badge bg-secondary">Pending</span>';
+        if (r.verificationDetails && r.verificationDetails.verified) {
+          verificationLabel = '<span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-patch-check-fill me-1"></i>Verified</span>';
+        } else if (r.status === 'REJECTED') {
+          verificationLabel = '<span class="badge bg-danger-subtle text-danger border border-danger">Rejected</span>';
+        }
+
+        const latStr = (r.latitude != null && !isNaN(r.latitude)) ? Number(r.latitude).toFixed(4) : '-';
+        const lonStr = (r.longitude != null && !isNaN(r.longitude)) ? Number(r.longitude).toFixed(4) : '-';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            ${r.photoUrl ? `
+              <img src="${r.photoUrl}" class="report-thumb" title="Click to view full image" onclick="viewPhotoModal('${r.photoUrl}', '${r.reportId}')">
+            ` : `
+              <div class="report-thumb bg-light d-flex align-items-center justify-content-center text-muted" title="No photo">
+                <i class="bi bi-camera-slash"></i>
+              </div>
+            `}
+          </td>
+          <td>
+            <a href="/report-details.html?id=${r.reportId}" class="fw-bold font-monospace text-primary text-decoration-none">
+              ${r.reportId}
+            </a>
+          </td>
+          <td>
+            <div class="fw-semibold text-dark">${r.citizenName || 'Citizen'}</div>
+            <div class="small text-muted" style="font-size:0.75rem;">${r.citizenEmail || ''}</div>
+          </td>
+          <td style="max-width:200px;">
+            <div class="fw-semibold text-dark">${r.problemType || 'Drainage Issue'}</div>
+            <div class="small text-muted text-truncate" title="${r.description || ''}">${r.description || ''}</div>
+          </td>
+          <td class="small" style="max-width:200px;">
+            <div class="text-dark fw-semibold text-truncate" title="${r.locationName || ''}">${r.locationName || 'Location recorded'}</div>
+            <div class="text-muted font-monospace" style="font-size:0.75rem;"><i class="bi bi-geo-alt-fill text-danger me-1"></i>${latStr}, ${lonStr}</div>
+          </td>
+          <td>
+            <span class="badge bg-light text-dark border">${r.waterLevel || 'Medium'}</span>
+          </td>
+          <td class="small text-muted text-nowrap">
+            ${dateStr}
+          </td>
+          <td>
+            <span class="badge-risk ${riskBadges[r.riskLevel] || 'badge-risk-low'}">
+              ${r.riskLevel || 'LOW'} (${r.riskScore || 0})
+            </span>
+          </td>
+          <td>
+            <span class="badge ${priorityBadges[r.priority] || 'badge-priority-LOW'}">${r.priority || 'MEDIUM'}</span>
+          </td>
+          <td>
+            ${verificationLabel}
+          </td>
+          <td>
+            <span class="badge-status ${statusBadges[r.status] || 'bg-secondary'}">${r.status}</span>
+          </td>
+          <td class="text-end text-nowrap">
+            <div class="btn-group btn-group-sm">
+              <a href="/report-details.html?id=${r.reportId}" class="btn btn-outline-dark" title="View Full Complaint">
+                <i class="bi bi-eye"></i>
+              </a>
+              <button class="btn btn-outline-primary" onclick="openVerifyModal('${r.reportId}')" title="Verify / Reject">
+                <i class="bi bi-patch-check"></i>
+              </button>
+              <button class="btn btn-outline-secondary" onclick="openPriorityModal('${r.reportId}', '${r.priority}')" title="Change Priority">
+                <i class="bi bi-sort-numeric-down"></i>
+              </button>
+              <button class="btn btn-outline-success" onclick="openStatusModal('${r.reportId}', '${r.status}')" title="Update Status / Mark Completed">
+                <i class="bi bi-arrow-repeat"></i>
+              </button>
+              <button class="btn btn-outline-info" onclick="openNoteModal('${r.reportId}')" title="Add Admin Note">
+                <i class="bi bi-journal-plus"></i>
+              </button>
+              <a href="/risk-map.html" class="btn btn-outline-secondary" title="Locate on Field Map">
+                <i class="bi bi-geo-alt"></i>
+              </a>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderPagination(totalPages) {
+      const ul = document.getElementById('pagination-controls');
+      ul.innerHTML = '';
+      if (totalPages <= 1) return;
+
+      // Prev
+      const prevLi = document.createElement('li');
+      prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+      prevLi.innerHTML = '<a class="page-link" href="javascript:void(0)">&laquo;</a>';
+      prevLi.addEventListener('click', () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderTable();
+        }
+      });
+      ul.appendChild(prevLi);
+
+      // Pages
+      for (let p = 1; p <= totalPages; p++) {
+        const li = document.createElement('li');
+        li.className = `page-item ${currentPage === p ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="javascript:void(0)">${p}</a>`;
+        const targetPage = p;
+        li.addEventListener('click', () => {
+          currentPage = targetPage;
+          renderTable();
+        });
+        ul.appendChild(li);
+      }
+
+      // Next
+      const nextLi = document.createElement('li');
+      nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+      nextLi.innerHTML = '<a class="page-link" href="javascript:void(0)">&raquo;</a>';
+      nextLi.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderTable();
+        }
+      });
+      ul.appendChild(nextLi);
+    }
+
+    // Modal helpers
+    function openVerifyModal(reportId) {
+      document.getElementById('verify-report-id').value = reportId;
+      document.getElementById('modalVerifyTitle').textContent = `Verify Complaint: ${reportId}`;
+      modalVerifyObj.show();
+    }
+
+    function openPriorityModal(reportId, currentPriority) {
+      document.getElementById('priority-report-id').value = reportId;
+      document.getElementById('priority-select').value = currentPriority || 'MEDIUM';
+      document.getElementById('modalPriorityTitle').textContent = `Change Priority: ${reportId}`;
+      modalPriorityObj.show();
+    }
+
+    function openStatusModal(reportId, currentStatus) {
+      document.getElementById('status-report-id').value = reportId;
+      document.getElementById('status-select').value = currentStatus || 'SUBMITTED';
+      document.getElementById('modalStatusTitle').textContent = `Update Lifecycle Status: ${reportId}`;
+      modalStatusObj.show();
+    }
+
+    function openNoteModal(reportId) {
+      document.getElementById('note-report-id').value = reportId;
+      document.getElementById('internal-note-text').value = '';
+      document.getElementById('modalNoteTitle').textContent = `Add Internal Note: ${reportId}`;
+      modalNoteObj.show();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth(['admin'])) return;
+      Auth.renderSidebar('manage-reports');
+
+      photoModalObj = new bootstrap.Modal(document.getElementById('modalPhotoView'));
+      modalVerifyObj = new bootstrap.Modal(document.getElementById('modalVerify'));
+      modalPriorityObj = new bootstrap.Modal(document.getElementById('modalPriority'));
+      modalStatusObj = new bootstrap.Modal(document.getElementById('modalStatus'));
+      modalNoteObj = new bootstrap.Modal(document.getElementById('modalAdminNote'));
+
+      loadReports();
+
+      // Realtime complaint updates via Socket.IO
+      if (typeof io !== 'undefined') {
+        const socket = io();
+        socket.on('report:new', (newReport) => {
+          API.showToast(`New Report Submitted: ${newReport.reportId}`, 'info');
+          loadReports();
+        });
+        socket.on('report:updated', (updatedReport) => {
+          loadReports();
+        });
+      }
+
+      // Filter & Sort event listeners
+      document.getElementById('search-input').addEventListener('input', applyFilters);
+      document.getElementById('filter-status').addEventListener('change', applyFilters);
+      document.getElementById('filter-priority').addEventListener('change', applyFilters);
+      document.getElementById('filter-problem').addEventListener('change', applyFilters);
+      document.getElementById('filter-date').addEventListener('change', applyFilters);
+      document.getElementById('sort-by').addEventListener('change', applyFilters);
+
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        document.getElementById('search-input').value = '';
+        document.getElementById('filter-status').value = 'ALL';
+        document.getElementById('filter-priority').value = 'ALL';
+        document.getElementById('filter-problem').value = 'ALL';
+        document.getElementById('filter-date').value = 'ALL';
+        document.getElementById('sort-by').value = 'NEWEST';
+        applyFilters();
+      });
+
+      document.getElementById('btn-refresh').addEventListener('click', loadReports);
+
+      // Verify submit
+      document.getElementById('btn-save-verify').addEventListener('click', async () => {
+        const id = document.getElementById('verify-report-id').value;
+        const action = document.getElementById('verify-action').value;
+        const notes = document.getElementById('verify-notes').value;
+
+        try {
+          await API.put(`/api/admin/reports/${id}/verify`, { action, notes });
+          modalVerifyObj.hide();
+          API.showToast(`Report ${id} verification updated to ${action}.`, 'success');
+          loadReports();
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+
+      // Priority submit
+      document.getElementById('btn-save-priority').addEventListener('click', async () => {
+        const id = document.getElementById('priority-report-id').value;
+        const priority = document.getElementById('priority-select').value;
+        const reason = document.getElementById('priority-reason').value;
+
+        if (!reason.trim()) {
+          alert('A documented reason is required to override priority.');
+          return;
+        }
+
+        try {
+          await API.put(`/api/admin/reports/${id}/priority`, { priority, reason });
+          modalPriorityObj.hide();
+          API.showToast(`Priority updated to ${priority}.`, 'success');
+          loadReports();
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+
+      // Status submit
+      document.getElementById('btn-save-status').addEventListener('click', async () => {
+        const id = document.getElementById('status-report-id').value;
+        const status = document.getElementById('status-select').value;
+        const notes = document.getElementById('status-notes').value;
+        const completionNotes = document.getElementById('status-completion-notes').value;
+        const completionEvidenceUrl = document.getElementById('status-completion-evidence').value;
+
+        try {
+          await API.put(`/api/admin/reports/${id}/status`, {
+            status,
+            notes,
+            completionNotes: completionNotes || notes,
+            completionEvidenceUrl: completionEvidenceUrl || undefined
+          });
+          modalStatusObj.hide();
+          API.showToast(`Status updated to ${status}.`, 'success');
+          loadReports();
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+
+      // Note submit
+      document.getElementById('btn-save-note').addEventListener('click', async () => {
+        const id = document.getElementById('note-report-id').value;
+        const note = document.getElementById('internal-note-text').value;
+
+        if (!note.trim()) {
+          alert('Please enter note text.');
+          return;
+        }
+
+        try {
+          await API.post(`/api/admin/reports/${id}/notes`, { note });
+          modalNoteObj.hide();
+          API.showToast(`Administrative note saved for ${id}.`, 'success');
+          loadReports();
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

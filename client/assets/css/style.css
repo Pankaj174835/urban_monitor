@@ -1,0 +1,561 @@
+/* ==========================================================================
+   Urban Flood Reporting & Smart Drain Monitoring System
+   Design System: GovTech & Smart City Operations Platform
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-primary: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Color Palette */
+  --primary-navy: #0f172a;
+  --secondary-navy: #1e293b;
+  --navy-border: #334155;
+  --blue-primary: #1d4ed8;
+  --blue-hover: #1e40af;
+  --blue-light: #eff6ff;
+  --blue-accent: #38bdf8;
+
+  /* Risk & Status Colors */
+  --risk-high: #dc2626;
+  --risk-high-bg: #fef2f2;
+  --risk-high-border: #fecaca;
+
+  --risk-med: #d97706;
+  --risk-med-bg: #fffbeb;
+  --risk-med-border: #fde68a;
+
+  --risk-low: #059669;
+  --risk-low-bg: #ecfdf5;
+  --risk-low-border: #a7f3d0;
+
+  --status-submitted: #2563eb;
+  --status-inspection: #7c3aed;
+  --status-cleaning: #d97706;
+  --status-completed: #059669;
+  --status-rejected: #64748b;
+
+  /* Neutrals */
+  --bg-main: #f8fafc;
+  --bg-surface: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   Header & Top Navigation
+   ========================================================================== */
+
+.gov-topbar {
+  background-color: var(--primary-navy);
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gov-topbar a {
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+.gov-topbar a:hover {
+  color: #ffffff;
+}
+
+.navbar-brand-custom {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.navbar-brand-custom img {
+  height: 42px;
+  width: 42px;
+}
+
+.brand-text-title {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #ffffff;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.brand-text-subtitle {
+  font-size: 0.72rem;
+  color: var(--blue-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.main-navbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.65rem 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-link-custom {
+  font-weight: 500;
+  color: #334155 !important;
+  padding: 0.5rem 0.875rem !important;
+  border-radius: 0.375rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.nav-link-custom:hover,
+.nav-link-custom.active {
+  color: var(--blue-primary) !important;
+  background-color: var(--blue-light);
+}
+
+/* ==========================================================================
+   Dashboard Layout & Sidebar
+   ========================================================================== */
+
+.dashboard-wrapper {
+  display: flex;
+  flex: 1;
+}
+
+.dashboard-sidebar {
+  width: 260px;
+  background-color: var(--secondary-navy);
+  color: #f1f5f9;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--navy-border);
+  min-height: calc(100vh - 70px);
+}
+
+.sidebar-heading {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  font-weight: 700;
+  padding: 1rem 1.25rem 0.5rem;
+}
+
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.sidebar-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.sidebar-nav-link.active {
+  background-color: rgba(37, 99, 235, 0.18);
+  color: #60a5fa;
+  border-left-color: #3b82f6;
+  font-weight: 600;
+}
+
+.sidebar-nav-link i {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 1.75rem 2rem;
+  overflow-y: auto;
+}
+
+/* ==========================================================================
+   Cards & Component Utilities
+   ========================================================================== */
+
+.card-custom {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-custom:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.stat-card {
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.stat-val {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary-navy);
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   Badges: Risk & Status
+   ========================================================================== */
+
+.badge-risk {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-risk-high {
+  background-color: var(--risk-high-bg);
+  color: var(--risk-high);
+  border: 1px solid var(--risk-high-border);
+}
+
+.badge-risk-medium {
+  background-color: var(--risk-med-bg);
+  color: var(--risk-med);
+  border: 1px solid var(--risk-med-border);
+}
+
+.badge-risk-low {
+  background-color: var(--risk-low-bg);
+  color: var(--risk-low);
+  border: 1px solid var(--risk-low-border);
+}
+
+.badge-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-status-SUBMITTED {
+  background-color: #dbeafe;
+  color: var(--status-submitted);
+}
+
+.badge-status-UNDER_INSPECTION {
+  background-color: #ede9fe;
+  color: var(--status-inspection);
+}
+
+.badge-status-CLEANING_STARTED {
+  background-color: #fef3c7;
+  color: var(--status-cleaning);
+}
+
+.badge-status-COMPLETED {
+  background-color: #d1fae5;
+  color: var(--status-completed);
+}
+
+.badge-status-REJECTED {
+  background-color: #f1f5f9;
+  color: var(--status-rejected);
+}
+
+.badge-priority-CRITICAL {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #f87171;
+  font-weight: 800;
+}
+
+.badge-priority-HIGH {
+  background-color: #ffedd5;
+  color: #9a3412;
+  font-weight: 700;
+}
+
+.badge-priority-MEDIUM {
+  background-color: #fef9c3;
+  color: #854d0e;
+  font-weight: 600;
+}
+
+.badge-priority-LOW {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Complaint Progress Stepper Timeline
+   ========================================================================== */
+
+.stepper-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  margin: 2rem 0;
+  padding: 0 1rem;
+}
+
+.stepper-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.stepper-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #64748b;
+  transition: all 0.3s ease;
+}
+
+.stepper-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.stepper-step.completed .stepper-circle {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+.stepper-step.active .stepper-circle {
+  background: #2563eb;
+  border-color: #bfdbfe;
+  color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+}
+
+.stepper-step.active .stepper-label,
+.stepper-step.completed .stepper-label {
+  color: var(--primary-navy);
+}
+
+.stepper-line {
+  position: absolute;
+  top: 22px;
+  left: 10%;
+  right: 10%;
+  height: 4px;
+  background: #e2e8f0;
+  z-index: 1;
+}
+
+.stepper-line-progress {
+  height: 100%;
+  background: #10b981;
+  transition: width 0.4s ease;
+}
+
+/* ==========================================================================
+   Map Styling
+   ========================================================================== */
+
+.map-container {
+  height: 520px;
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  z-index: 1;
+}
+
+.map-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* ==========================================================================
+   Hero Section
+   ========================================================================== */
+
+.landing-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  color: #ffffff;
+  padding: 5rem 0 4rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.hero-tagline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #e0f2fe;
+  margin-bottom: 1.5rem;
+}
+
+.hero-title {
+  font-size: 2.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 1.25rem;
+}
+
+.hero-subtitle {
+  font-size: 1.125rem;
+  color: #cbd5e1;
+  max-width: 680px;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+/* Demo Badge Watermark */
+.demo-data-badge {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  text-transform: uppercase;
+}
+
+/* Notifications Dropdown & Badge */
+.notif-bell-btn {
+  position: relative;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #475569;
+  cursor: pointer;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.375rem;
+  transition: all 0.15s ease;
+}
+
+.notif-bell-btn:hover {
+  background: #f1f5f9;
+  color: var(--blue-primary);
+}
+
+.notif-badge-count {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: var(--risk-high);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.1rem 0.35rem;
+  border-radius: 9999px;
+  line-height: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .dashboard-wrapper {
+    flex-direction: column;
+  }
+  .dashboard-sidebar {
+    width: 100%;
+    min-height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--navy-border);
+  }
+  .dashboard-content {
+    padding: 1.25rem 1rem;
+  }
+  .hero-title {
+    font-size: 2.1rem;
+  }
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications &amp; Alerts - Urban Flood &amp; Smart Drain Monitor</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body class="bg-light">
+
+  <div id="main-header"></div>
+
+  <div class="dashboard-wrapper">
+    <aside class="dashboard-sidebar" id="dashboard-sidebar"></aside>
+
+    <main class="dashboard-content">
+      <div class="max-w-900 mx-auto">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+          <div>
+            <h2 class="fw-bold text-dark mb-1">In-App Notifications &amp; Risk Alerts</h2>
+            <p class="text-muted small mb-0">System-generated status updates, high-risk drainage cluster alerts, and municipal announcements</p>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary btn-sm fw-semibold" id="btn-mark-all-read">
+              <i class="bi bi-check2-all me-1"></i> Mark All as Read
+            </button>
+          </div>
+        </div>
+
+        <div id="notifs-loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted small mt-2">Loading alerts...</p>
+        </div>
+
+        <div id="notifs-empty" class="card card-custom p-5 text-center d-none">
+          <i class="bi bi-bell-slash text-muted fs-1 mb-2"></i>
+          <h5 class="fw-bold text-dark">No Notifications</h5>
+          <p class="text-muted small">You're all caught up! New status updates and high-risk area warnings will appear here.</p>
+        </div>
+
+        <div class="d-flex flex-column gap-3" id="notifs-list"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script>
+    async function loadNotifications() {
+      try {
+        const res = await API.get('/api/notifications');
+        document.getElementById('notifs-loading').classList.add('d-none');
+
+        const notifs = res.notifications || [];
+        const container = document.getElementById('notifs-list');
+        const emptyBox = document.getElementById('notifs-empty');
+        container.innerHTML = '';
+
+        if (notifs.length === 0) {
+          emptyBox.classList.remove('d-none');
+          return;
+        }
+
+        emptyBox.classList.add('d-none');
+
+        notifs.forEach(n => {
+          const isUnread = !n.isRead;
+          const dateStr = new Date(n.createdAt).toLocaleDateString('en-IN', {
+            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+
+          const typeStyles = {
+            'HIGH_RISK_ALERT': { icon: 'bi-exclamation-triangle-fill', color: 'text-danger', border: 'border-danger' },
+            'STATUS_UPDATE': { icon: 'bi-arrow-repeat', color: 'text-primary', border: 'border-primary' },
+            'TASK_ASSIGNED': { icon: 'bi-truck', color: 'text-info', border: 'border-info' },
+            'WORK_COMPLETED': { icon: 'bi-check-circle-fill', color: 'text-success', border: 'border-success' },
+            'SYSTEM_ANNOUNCEMENT': { icon: 'bi-megaphone-fill', color: 'text-secondary', border: 'border-secondary' }
+          };
+
+          const s = typeStyles[n.type] || typeStyles.STATUS_UPDATE;
+
+          const card = document.createElement('div');
+          card.className = `card card-custom p-3 border-start border-4 ${s.border} ${isUnread ? 'bg-white shadow-sm' : 'bg-light bg-opacity-50'}`;
+          card.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div class="d-flex gap-3">
+                <div class="fs-4 ${s.color}"><i class="bi ${s.icon}"></i></div>
+                <div>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <h6 class="fw-bold text-dark mb-0">${n.title}</h6>
+                    ${isUnread ? '<span class="badge bg-primary" style="font-size:0.65rem;">NEW</span>' : ''}
+                  </div>
+                  <p class="small text-secondary mb-2">${n.message}</p>
+                  <div class="small text-muted">${dateStr}</div>
+                </div>
+              </div>
+              <div class="d-flex flex-column gap-1">
+                ${n.reportId ? `
+                  <a href="/report-details.html?id=${n.reportId}" class="btn btn-outline-primary btn-sm fw-semibold">
+                    View
+                  </a>
+                ` : ''}
+                ${isUnread ? `
+                  <button class="btn btn-sm btn-light border text-muted" onclick="markRead('${n._id}')" title="Mark as Read">
+                    <i class="bi bi-check2"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+
+      } catch (err) {
+        document.getElementById('notifs-loading').innerHTML = `
+          <div class="alert alert-danger mb-0">${err.message || 'Error loading alerts'}</div>
+        `;
+      }
+    }
+
+    async function markRead(id) {
+      try {
+        await API.put(`/api/notifications/${id}/read`);
+        loadNotifications();
+        if (window.updateNotificationBadge) window.updateNotificationBadge();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth()) return;
+      Auth.renderSidebar('notifications');
+      loadNotifications();
+
+      document.getElementById('btn-mark-all-read').addEventListener('click', async () => {
+        try {
+          await API.put('/api/notifications/read-all');
+          loadNotifications();
+          if (window.updateNotificationBadge) window.updateNotificationBadge();
+          API.showToast('All notifications marked as read', 'info');
+        } catch (e) {
+          alert(e.message);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

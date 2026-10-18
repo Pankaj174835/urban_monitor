@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prevention Insights - Urban Flood &amp; Smart Drain Monitor</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body class="bg-light">
+
+  <div id="main-header"></div>
+
+  <div class="dashboard-wrapper">
+    <aside class="dashboard-sidebar" id="dashboard-sidebar"></aside>
+
+    <main class="dashboard-content">
+      <div class="max-w-1000 mx-auto">
+        <div class="mb-4">
+          <div class="d-flex align-items-center gap-2">
+            <h2 class="fw-bold text-dark mb-0">Pre-Monsoon Prevention Insights</h2>
+          </div>
+          <p class="text-muted small mb-0 mt-1">
+            Data-driven strategic recommendations for municipal civil engineers to prevent localized inundation before the monsoon season arrives.
+          </p>
+        </div>
+
+        <div class="alert alert-info border-info border-opacity-25 bg-info bg-opacity-10 mb-4">
+          <div class="d-flex align-items-start gap-2">
+            <i class="bi bi-info-circle-fill text-info fs-5 mt-1"></i>
+            <div class="small text-dark">
+              <strong>Transparent Decision Support:</strong> Every finding below is computationally derived from database incident clustering, water level logs, and resolution histories. These analytical insights identify locations requiring scheduled desilting rather than certifying future hydrological forecasts.
+            </div>
+          </div>
+        </div>
+
+        <div id="insights-loading" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted small mt-2">Synthesizing prevention insights from municipal records...</p>
+        </div>
+
+        <div class="d-flex flex-column gap-3" id="insights-list"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      Auth.renderSidebar('prevention');
+
+      try {
+        const res = await API.get('/api/analytics/prevention');
+        document.getElementById('insights-loading').classList.add('d-none');
+
+        const insights = res.insights || [];
+        const container = document.getElementById('insights-list');
+        container.innerHTML = '';
+
+        if (insights.length === 0) {
+          container.innerHTML = `
+            <div class="card card-custom p-5 text-center">
+              <i class="bi bi-check2-circle text-success fs-1 mb-2"></i>
+              <h5 class="fw-bold text-dark">No Immediate Prevention Warnings</h5>
+              <p class="text-muted small">Current complaint volume is low and normal drainage capacity is maintained.</p>
+            </div>
+          `;
+          return;
+        }
+
+        insights.forEach(ins => {
+          const severityColors = {
+            'HIGH': 'border-danger text-danger bg-danger',
+            'MEDIUM': 'border-warning text-warning bg-warning',
+            'LOW': 'border-info text-info bg-info'
+          };
+
+          const sColor = severityColors[ins.severity] || severityColors.MEDIUM;
+
+          const card = document.createElement('div');
+          card.className = `card card-custom p-4 border-start border-4 ${sColor.split(' ')[0]} bg-white shadow-sm`;
+          card.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="badge ${sColor.split(' ')[2]} bg-opacity-10 ${sColor.split(' ')[1]} fw-bold text-uppercase px-2 py-1">
+                ${ins.category} &bull; ${ins.severity} PRIORITY
+              </span>
+              <span class="small text-muted"><i class="bi bi-geo-alt me-1"></i>${ins.location}</span>
+            </div>
+
+            <h5 class="fw-bold text-dark mb-2">${ins.title}</h5>
+            
+            <div class="p-3 bg-light rounded-3 mb-3 border">
+              <div class="small fw-semibold text-dark mb-1">Empirical Finding:</div>
+              <p class="small text-secondary mb-0">${ins.finding}</p>
+            </div>
+
+            <div class="mb-3">
+              <div class="small fw-bold text-dark mb-1"><i class="bi bi-shield-check text-success me-1"></i>Recommended Municipal Engineering Action:</div>
+              <div class="small text-dark">${ins.recommendation}</div>
+            </div>
+
+            <div class="border-top pt-2 small text-muted font-monospace" style="font-size:0.75rem;">
+              <i class="bi bi-database me-1"></i>Basis: ${ins.basis}
+            </div>
+          `;
+          container.appendChild(card);
+        });
+
+      } catch (err) {
+        document.getElementById('insights-loading').innerHTML = `
+          <div class="alert alert-danger mb-0">${err.message || 'Error loading prevention insights'}</div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

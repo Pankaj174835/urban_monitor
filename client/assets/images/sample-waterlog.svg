@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgWater" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="40%" stop-color="#334155"/>
+      <stop offset="41%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#075985"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="260" fill="url(#bgWater)"/>
+  <!-- Street buildings / background -->
+  <rect x="30" y="20" width="60" height="85" fill="#475569"/>
+  <rect x="110" y="40" width="80" height="65" fill="#64748b"/>
+  <rect x="230" y="10" width="70" height="95" fill="#475569"/>
+  <rect x="320" y="30" width="60" height="75" fill="#334155"/>
+  <!-- Water Surface & Ripples -->
+  <path d="M 0 110 Q 50 105 100 110 T 200 110 T 300 110 T 400 110 L 400 260 L 0 260 Z" fill="#0284c7" fill-opacity="0.9"/>
+  <path d="M 20 140 Q 80 135 140 140 T 260 140 T 380 140" stroke="#7dd3fc" stroke-width="2" fill="none" opacity="0.6"/>
+  <path d="M 40 180 Q 120 175 200 180 T 360 180" stroke="#7dd3fc" stroke-width="2.5" fill="none" opacity="0.5"/>
+  <!-- Submerged traffic barrier / cone -->
+  <polygon points="190,140 210,140 200,90" fill="#f97316"/>
+  <rect x="195" y="110" width="10" height="6" fill="#ffffff"/>
+  <rect x="15" y="15" width="180" height="26" rx="4" fill="#dc2626"/>
+  <text x="105" y="32" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DEMO: WATERLOGGING</text>
+  <text x="200" y="240" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#e0f2fe" text-anchor="middle">Inundated Road Surface (Water Level: High)</text>
+</svg>

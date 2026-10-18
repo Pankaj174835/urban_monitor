@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="100%" height="100%">
+  <rect width="400" height="260" fill="#0f172a"/>
+  <!-- Clean dry street -->
+  <rect x="0" y="40" width="400" height="180" fill="#334155"/>
+  <!-- Restored, cleared drain grate with clean flow -->
+  <rect x="80" y="60" width="240" height="140" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="3"/>
+  <rect x="90" y="70" width="220" height="25" fill="#10b981" fill-opacity="0.2"/>
+  <line x1="120" y1="70" x2="120" y2="180" stroke="#64748b" stroke-width="5"/>
+  <line x1="160" y1="70" x2="160" y2="180" stroke="#64748b" stroke-width="5"/>
+  <line x1="200" y1="70" x2="200" y2="180" stroke="#64748b" stroke-width="5"/>
+  <line x1="240" y1="70" x2="240" y2="180" stroke="#64748b" stroke-width="5"/>
+  <line x1="280" y1="70" x2="280" y2="180" stroke="#64748b" stroke-width="5"/>
+  <!-- Free flowing clear water stream underneath -->
+  <path d="M 85 180 Q 150 165 200 170 T 315 170 L 315 190 L 85 190 Z" fill="#0284c7" opacity="0.7"/>
+  <!-- Checkmark Badge -->
+  <circle cx="340" cy="50" r="24" fill="#10b981"/>
+  <path d="M 330 50 L 337 57 L 352 42" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="15" y="15" width="180" height="26" rx="4" fill="#059669"/>
+  <text x="105" y="32" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">MAINTENANCE RESOLVED</text>
+  <text x="200" y="245" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#6ee7b7" text-anchor="middle">Silt Cleared, Obstructions Removed &amp; Flow Restored</text>
+</svg>

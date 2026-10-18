@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="100%" height="100%">
+  <rect width="400" height="260" fill="#1e293b"/>
+  <!-- Broken drain curb and collapsed slab -->
+  <rect x="0" y="40" width="400" height="180" fill="#475569"/>
+  <!-- Broken trench fissure -->
+  <polygon points="120,40 180,180 240,160 290,220 220,220 160,190 90,130" fill="#0f172a"/>
+  <!-- Cracked lines -->
+  <path d="M 80 80 L 130 110 L 160 140 M 230 130 L 290 100 L 340 120" stroke="#cbd5e1" stroke-width="3" fill="none"/>
+  <!-- Rubble pieces -->
+  <polygon points="170,120 190,130 185,145 165,135" fill="#64748b"/>
+  <polygon points="210,140 235,150 225,165 205,155" fill="#94a3b8"/>
+  <rect x="15" y="15" width="180" height="26" rx="4" fill="#d97706"/>
+  <text x="105" y="32" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DEMO: DRAINAGE DAMAGE</text>
+  <text x="200" y="245" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#cbd5e1" text-anchor="middle">Cracked Concrete Slab &amp; Collapsed Drain Wall</text>
+</svg>

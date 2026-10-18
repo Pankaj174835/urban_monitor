@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting - Urban Flood &amp; Smart Drain Monitor</title>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script>
+    // System restricted to CITIZEN and MUNICIPAL ADMIN roles only
+    const user = Auth.getUser();
+    if (user && user.role === 'admin') {
+      window.location.replace('/admin-dashboard.html');
+    } else if (user && user.role === 'citizen') {
+      window.location.replace('/citizen-dashboard.html');
+    } else {
+      window.location.replace('/login.html');
+    }
+  </script>
+</head>
+<body style="font-family:sans-serif; text-align:center; padding-top:50px; background:#f8fafc;">
+  <h3>UrbanDrainMonitor</h3>
+  <p>Redirecting to authorized operations dashboard...</p>
+</body>
+</html>

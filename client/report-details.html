@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Details &amp; Lifecycle Timeline - Urban Flood &amp; Smart Drain Monitor</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <style>
+    #detail-map {
+      height: 240px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+    .photo-display-box {
+      min-height: 220px;
+      max-height: 280px;
+      background-color: #0f172a !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+  <div id="main-header"></div>
+
+  <div class="dashboard-wrapper">
+    <aside class="dashboard-sidebar" id="dashboard-sidebar"></aside>
+
+    <main class="dashboard-content">
+      <div id="loading-state" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted small mt-2">Loading complaint details &amp; progress history...</p>
+      </div>
+
+      <div id="error-state" class="alert alert-danger d-none my-4"></div>
+
+      <div id="content-container" class="d-none">
+        <!-- Breadcrumbs & Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+          <div>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb small">
+                <li class="breadcrumb-item" id="breadcrumb-parent-link"><a href="/my-reports.html">Reports</a></li>
+                <li class="breadcrumb-item active" id="breadcrumb-id">UD-xxxx</li>
+              </ol>
+            </nav>
+            <div class="d-flex align-items-center gap-2">
+              <h2 class="fw-bold text-dark mb-0" id="detail-report-id">UD-xxxx</h2>
+            </div>
+            <p class="text-muted small mb-0 mt-1" id="detail-subtitle">Submitted on ...</p>
+          </div>
+          <div class="d-flex gap-2 flex-wrap" id="action-buttons-top">
+            <a href="/risk-map.html" class="btn btn-outline-secondary fw-semibold btn-sm">
+              <i class="bi bi-map me-1"></i> Locate on Map
+            </a>
+          </div>
+        </div>
+
+        <!-- Municipal Admin Quick Action Bar (Visible to Admin Only) -->
+        <div id="admin-action-bar" class="card card-custom p-3 mb-4 bg-primary bg-opacity-10 border border-primary border-opacity-25 d-none">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-shield-check text-primary fs-4"></i>
+              <div>
+                <strong class="text-dark">Municipal Admin Actions</strong>
+                <div class="small text-muted">Directly manage complaint lifecycle and record resolution notes</div>
+              </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-sm btn-outline-primary fw-semibold" id="btn-admin-verify">
+                <i class="bi bi-patch-check me-1"></i> Verify / Reject
+              </button>
+              <button class="btn btn-sm btn-outline-secondary fw-semibold" id="btn-admin-priority">
+                <i class="bi bi-sort-numeric-down me-1"></i> Override Priority
+              </button>
+              <button class="btn btn-sm btn-outline-dark fw-semibold" id="btn-admin-note">
+                <i class="bi bi-journal-plus me-1"></i> Add Admin Note
+              </button>
+              <button class="btn btn-sm btn-primary fw-bold" id="btn-admin-status">
+                <i class="bi bi-arrow-repeat me-1"></i> Update Status
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 7: Visual Progress Stepper Timeline -->
+        <div class="card card-custom p-4 mb-4">
+          <h6 class="fw-bold text-uppercase text-muted small mb-3">Complaint Resolution Lifecycle</h6>
+          <div class="stepper-timeline">
+            <div class="stepper-line">
+              <div class="stepper-line-progress" id="stepper-progress" style="width: 0%;"></div>
+            </div>
+
+            <div class="stepper-step" id="step-submitted">
+              <div class="stepper-circle"><i class="bi bi-send-fill"></i></div>
+              <div class="stepper-label">Submitted</div>
+            </div>
+
+            <div class="stepper-step" id="step-inspection">
+              <div class="stepper-circle"><i class="bi bi-search"></i></div>
+              <div class="stepper-label">Under Inspection</div>
+            </div>
+
+            <div class="stepper-step" id="step-cleaning">
+              <div class="stepper-circle"><i class="bi bi-tools"></i></div>
+              <div class="stepper-label">Cleaning Started</div>
+            </div>
+
+            <div class="stepper-step" id="step-completed">
+              <div class="stepper-circle"><i class="bi bi-check2-all"></i></div>
+              <div class="stepper-label">Completed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="row g-4">
+          <!-- Left Column -->
+          <div class="col-lg-8">
+            <!-- Section 1: Complaint Information -->
+            <div class="card card-custom p-4 mb-4">
+              <h5 class="fw-bold text-dark mb-3">Report Information</h5>
+              <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                  <div class="text-muted small">Problem Category</div>
+                  <div class="fw-bold text-dark fs-5" id="detail-problem-type">-</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Current Status</div>
+                  <div id="detail-status-badge">-</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Water Level Severity</div>
+                  <div class="fw-semibold text-dark" id="detail-water-level">-</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Municipal Priority</div>
+                  <div id="detail-priority-badge">-</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Verification State</div>
+                  <div id="detail-verification-badge">-</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Duplicate Status</div>
+                  <div id="detail-duplicate-badge">-</div>
+                </div>
+                <div class="col-12">
+                  <div class="text-muted small">Citizen Description</div>
+                  <div class="p-3 bg-light rounded-3 text-secondary mt-1" id="detail-description">-</div>
+                </div>
+              </div>
+
+              <!-- Resolution Details when completed -->
+              <div id="resolution-details-card" class="p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-3 d-none mt-2">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                  <strong class="text-success">Complaint Resolved &amp; Completed</strong>
+                </div>
+                <div class="small text-dark" id="resolution-notes-text">-</div>
+                <div class="small text-muted mt-1" id="resolution-meta-text">-</div>
+              </div>
+            </div>
+
+            <!-- Section 5: AI-Assisted Risk Analysis -->
+            <div class="card card-custom p-4 mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 class="fw-bold text-dark mb-0">AI-Assisted Risk Analysis</h5>
+                  <div class="text-muted small">Explainable Rule-Based Risk Engine Prototype</div>
+                </div>
+                <div id="detail-risk-badge">-</div>
+              </div>
+
+              <div class="p-3 bg-light rounded-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-semibold text-dark">Computed Risk Score</span>
+                  <span class="fw-bold fs-5 text-primary" id="detail-risk-score">0 / 100</span>
+                </div>
+                <div class="progress" style="height: 10px;">
+                  <div class="progress-bar" id="detail-risk-progress" role="progressbar" style="width: 0%;"></div>
+                </div>
+              </div>
+
+              <h6 class="fw-bold text-dark small text-uppercase">Explainable Factor Breakdown:</h6>
+              <ul class="list-group list-group-flush small" id="detail-risk-reasons"></ul>
+            </div>
+
+            <!-- Section: Internal Administrative Notes -->
+            <div class="card card-custom p-4 mb-4" id="admin-notes-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-dark mb-0">Administrative Internal Notes</h5>
+                <span class="badge bg-secondary" id="admin-notes-count">0 notes</span>
+              </div>
+              <div id="detail-admin-notes-list">
+                <div class="text-muted small">No administrative notes recorded yet.</div>
+              </div>
+            </div>
+
+            <!-- Section 10: Status History Audit Log -->
+            <div class="card card-custom p-4 mb-4">
+              <h5 class="fw-bold text-dark mb-3">Status Audit Log</h5>
+              <div class="timeline-log" id="detail-status-history"></div>
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="col-lg-4">
+            <!-- Section 2: Photo Evidence -->
+            <div class="card card-custom p-3 mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="fw-bold text-dark mb-0">Photo Evidence</h6>
+                <span id="photo-status-badge" class="badge bg-secondary">Checking</span>
+              </div>
+              <div class="photo-display-box position-relative" id="photo-container">
+                <!-- Loading State -->
+                <div id="photo-loading-spinner" class="py-4 text-center">
+                  <div class="spinner-border spinner-border-sm text-light mb-2" role="status"></div>
+                  <div class="small text-white-50">Loading photographic evidence...</div>
+                </div>
+                <!-- Actual Photo Image -->
+                <img id="detail-photo" src="" alt="Live Complaint Photo Evidence" class="d-none" style="max-height: 250px; width: 100%; object-fit: contain; cursor: pointer;" title="Click to enlarge photo">
+                <!-- Empty State (No Photo) -->
+                <div id="photo-empty-state" class="p-4 text-center text-light d-none">
+                  <i class="bi bi-camera-slash fs-2 d-block mb-1 text-secondary"></i>
+                  <div class="fw-semibold small text-white">No Photo Evidence Attached</div>
+                  <div class="text-white-50" style="font-size: 0.75rem;">No photographic evidence was provided with this submission.</div>
+                </div>
+                <!-- Error State (Broken Image / Unavailable) -->
+                <div id="photo-error-state" class="p-4 text-center text-danger d-none">
+                  <i class="bi bi-exclamation-triangle-fill fs-2 d-block mb-1"></i>
+                  <div class="fw-semibold small">Photo File Unavailable</div>
+                  <div class="small text-white-50" style="font-size: 0.75rem;">Unable to load photographic file from storage.</div>
+                </div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-2">
+                <div class="small text-muted" id="detail-photo-caption">Live site photograph</div>
+                <button id="btn-enlarge-photo" class="btn btn-outline-primary btn-sm py-0 px-2 d-none" style="font-size:0.75rem;">
+                  <i class="bi bi-zoom-in me-1"></i> View Full Image
+                </button>
+              </div>
+            </div>
+
+            <!-- Section 3: Location & Mini-Map -->
+            <div class="card card-custom p-3 mb-4">
+              <h6 class="fw-bold text-dark mb-2">Location &amp; Coordinates</h6>
+              <div class="small fw-semibold text-dark mb-1" id="detail-location-name">Resolving location...</div>
+              <div class="small text-muted mb-2 font-monospace" id="detail-coords">Lat: 0.000000, Lon: 0.000000</div>
+              <div id="detail-map" class="mb-2"></div>
+              <div id="map-unavailable-msg" class="alert alert-warning py-2 px-3 small d-none mb-0">
+                <i class="bi bi-geo-alt me-1"></i> GPS coordinates unavailable for this report.
+              </div>
+            </div>
+
+            <!-- Section 8: Maintenance Team Assignment -->
+            <div class="card card-custom p-3 mb-4">
+              <h6 class="fw-bold text-dark mb-2">Assigned Maintenance Unit</h6>
+              <div id="detail-team-box" class="p-3 bg-light rounded-3">
+                <div class="fw-bold text-primary" id="detail-team-name">No team assigned yet</div>
+                <div class="small text-muted mt-1" id="detail-team-status">Direct administrative oversight</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: View Full Photo Evidence -->
+  <div class="modal fade" id="modalDetailPhotoView" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="photoModalTitle">Complaint Photo Evidence</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center p-0 bg-dark">
+          <img id="photoModalFullImg" src="" alt="Live evidence full size" style="max-height: 80vh; width: 100%; object-fit: contain;">
+        </div>
+        <div class="modal-footer justify-content-between">
+          <span class="small text-muted" id="photoModalCaption">Site captured evidence photograph</span>
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Admin Verify -->
+  <div class="modal fade" id="modalAdminVerify" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Verify Complaint</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Decision Action</label>
+            <select class="form-select" id="admin-verify-action">
+              <option value="VERIFY">VERIFY &mdash; Advance to Under Inspection</option>
+              <option value="REJECT">REJECT &mdash; Dismiss Complaint</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Inspection Notes</label>
+            <textarea class="form-control" id="admin-verify-notes" rows="3" placeholder="Enter verification notes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold" id="btn-save-admin-verify">Save Verification</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Admin Override Priority -->
+  <div class="modal fade" id="modalAdminPriority" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Override Priority</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Priority Level</label>
+            <select class="form-select" id="admin-priority-select">
+              <option value="CRITICAL">CRITICAL &mdash; Immediate field response</option>
+              <option value="HIGH">HIGH &mdash; Urgent dispatch within 24h</option>
+              <option value="MEDIUM">MEDIUM &mdash; Standard municipal queue</option>
+              <option value="LOW">LOW &mdash; Routine scheduled maintenance</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Documented Reason (Required)</label>
+            <textarea class="form-control" id="admin-priority-reason" rows="3" placeholder="Specify why priority is being changed..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold" id="btn-save-admin-priority">Commit Priority</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Admin Lifecycle Status -->
+  <div class="modal fade" id="modalAdminStatus" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Update Complaint Status</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Lifecycle State</label>
+            <select class="form-select" id="admin-status-select">
+              <option value="SUBMITTED">SUBMITTED</option>
+              <option value="UNDER INSPECTION">UNDER INSPECTION</option>
+              <option value="CLEANING STARTED">CLEANING STARTED</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Progress / Action Notes</label>
+            <textarea class="form-control" id="admin-status-notes" rows="2" placeholder="Record cleaning progress or inspection findings..."></textarea>
+          </div>
+          <div class="mb-3 border-top pt-2" id="admin-completion-fields">
+            <label class="form-label fw-semibold small text-muted">Resolution Details (Used when marking COMPLETED)</label>
+            <input type="text" class="form-control mb-2" id="admin-status-completion-notes" placeholder="Resolution notes (e.g. Silt dredged, drain cleared)">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold" id="btn-save-admin-status">Commit Status Change</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Admin Add Note -->
+  <div class="modal fade" id="modalAdminNote" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Add Administrative Internal Note</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Internal Note</label>
+            <textarea class="form-control" id="admin-internal-note" rows="3" placeholder="Enter administrative note for this complaint..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm fw-bold" id="btn-save-admin-note">Save Note</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/maps.js"></script>
+  <script>
+    let reportMap;
+    let currentReport = null;
+    let photoModalObj;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Auth.requireAuth(['citizen', 'admin'])) return;
+
+      const user = Auth.getUser();
+      const isAdmin = user && user.role === 'admin';
+      Auth.renderSidebar(isAdmin ? 'manage-reports' : 'my-reports');
+
+      if (isAdmin) {
+        document.getElementById('breadcrumb-parent-link').innerHTML = '<a href="/manage-reports.html">All Citizen Reports</a>';
+        document.getElementById('admin-action-bar').classList.remove('d-none');
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const reportId = urlParams.get('id');
+
+      if (!reportId) {
+        document.getElementById('loading-state').classList.add('d-none');
+        document.getElementById('error-state').textContent = 'No Report ID specified in URL.';
+        document.getElementById('error-state').classList.remove('d-none');
+        return;
+      }
+
+      // Socket.IO realtime listener for status updates
+      if (typeof io !== 'undefined') {
+        const socket = io();
+        socket.on(`report:status:${reportId}`, (data) => {
+          API.showToast(`Complaint status updated to: ${data.status}`, 'info');
+          loadReportDetails(reportId);
+        });
+      }
+
+      // Modals
+      photoModalObj = new bootstrap.Modal(document.getElementById('modalDetailPhotoView'));
+      const verifyModal = new bootstrap.Modal(document.getElementById('modalAdminVerify'));
+      const priorityModal = new bootstrap.Modal(document.getElementById('modalAdminPriority'));
+      const statusModal = new bootstrap.Modal(document.getElementById('modalAdminStatus'));
+      const noteModal = new bootstrap.Modal(document.getElementById('modalAdminNote'));
+
+      // Enlarge photo triggers
+      document.getElementById('detail-photo').addEventListener('click', openPhotoModal);
+      document.getElementById('btn-enlarge-photo').addEventListener('click', openPhotoModal);
+
+      function openPhotoModal() {
+        if (!currentReport || !currentReport.photoUrl) return;
+        document.getElementById('photoModalTitle').textContent = `Evidence: ${currentReport.reportId}`;
+        document.getElementById('photoModalFullImg').src = currentReport.photoUrl;
+        document.getElementById('photoModalCaption').textContent = `Site photograph for ${currentReport.reportId} (${currentReport.locationName || ''})`;
+        photoModalObj.show();
+      }
+
+      // Admin button click triggers
+      if (isAdmin) {
+        document.getElementById('btn-admin-verify').addEventListener('click', () => {
+          if (!currentReport) return;
+          verifyModal.show();
+        });
+
+        document.getElementById('btn-admin-priority').addEventListener('click', () => {
+          if (!currentReport) return;
+          document.getElementById('admin-priority-select').value = currentReport.priority || 'MEDIUM';
+          priorityModal.show();
+        });
+
+        document.getElementById('btn-admin-status').addEventListener('click', () => {
+          if (!currentReport) return;
+          document.getElementById('admin-status-select').value = currentReport.status || 'SUBMITTED';
+          statusModal.show();
+        });
+
+        document.getElementById('btn-admin-note').addEventListener('click', () => {
+          if (!currentReport) return;
+          document.getElementById('admin-internal-note').value = '';
+          noteModal.show();
+        });
+
+        // Save Verify
+        document.getElementById('btn-save-admin-verify').addEventListener('click', async () => {
+          const action = document.getElementById('admin-verify-action').value;
+          const notes = document.getElementById('admin-verify-notes').value;
+          try {
+            await API.put(`/api/admin/reports/${reportId}/verify`, { action, notes });
+            verifyModal.hide();
+            API.showToast(`Report verification updated: ${action}`, 'success');
+            loadReportDetails(reportId);
+          } catch (e) {
+            alert(e.message);
+          }
+        });
+
+        // Save Priority
+        document.getElementById('btn-save-admin-priority').addEventListener('click', async () => {
+          const priority = document.getElementById('admin-priority-select').value;
+          const reason = document.getElementById('admin-priority-reason').value;
+          if (!reason.trim()) {
+            alert('A documented reason is required to override priority.');
+            return;
+          }
+          try {
+            await API.put(`/api/admin/reports/${reportId}/priority`, { priority, reason });
+            priorityModal.hide();
+            API.showToast(`Priority updated to ${priority}`, 'success');
+            loadReportDetails(reportId);
+          } catch (e) {
+            alert(e.message);
+          }
+        });
+
+        // Save Status
+        document.getElementById('btn-save-admin-status').addEventListener('click', async () => {
+          const status = document.getElementById('admin-status-select').value;
+          const notes = document.getElementById('admin-status-notes').value;
+          const completionNotes = document.getElementById('admin-status-completion-notes').value;
+          try {
+            await API.put(`/api/admin/reports/${reportId}/status`, {
+              status,
+              notes,
+              completionNotes: completionNotes || notes
+            });
+            statusModal.hide();
+            API.showToast(`Status updated to ${status}`, 'success');
+            loadReportDetails(reportId);
+          } catch (e) {
+            alert(e.message);
+          }
+        });
+
+        // Save Note
+        document.getElementById('btn-save-admin-note').addEventListener('click', async () => {
+          const note = document.getElementById('admin-internal-note').value;
+          if (!note.trim()) {
+            alert('Please enter note text.');
+            return;
+          }
+          try {
+            await API.post(`/api/admin/reports/${reportId}/notes`, { note });
+            noteModal.hide();
+            API.showToast('Administrative note added', 'success');
+            loadReportDetails(reportId);
+          } catch (e) {
+            alert(e.message);
+          }
+        });
+      }
+
+      await loadReportDetails(reportId);
+    });
+
+    async function loadReportDetails(reportId) {
+      try {
+        const res = await API.get(`/api/reports/${reportId}`);
+        document.getElementById('loading-state').classList.add('d-none');
+
+        if (!res.success || !res.report) {
+          throw new Error('Report record not found.');
+        }
+
+        const r = res.report;
+        currentReport = r;
+        document.getElementById('content-container').classList.remove('d-none');
+
+        // Breadcrumbs & Header
+        document.getElementById('breadcrumb-id').textContent = r.reportId;
+        document.getElementById('detail-report-id').textContent = r.reportId;
+
+        const dateStr = new Date(r.createdAt).toLocaleDateString('en-IN', {
+          day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        document.getElementById('detail-subtitle').textContent = `Submitted by ${r.citizenName || 'Citizen'} (${r.citizenEmail || ''}) on ${dateStr}`;
+
+        // Section 1: Info
+        document.getElementById('detail-problem-type').textContent = r.problemType || 'Drainage Issue';
+        document.getElementById('detail-description').textContent = r.description || 'No description provided.';
+        document.getElementById('detail-water-level').innerHTML = `<span class="badge bg-light text-dark border fs-6">${r.waterLevel || 'Medium'}</span>`;
+
+        const statusBadges = {
+          'SUBMITTED': 'badge-status-SUBMITTED',
+          'UNDER INSPECTION': 'badge-status-UNDER_INSPECTION',
+          'CLEANING STARTED': 'badge-status-CLEANING_STARTED',
+          'COMPLETED': 'badge-status-COMPLETED',
+          'REJECTED': 'badge-status-REJECTED'
+        };
+        document.getElementById('detail-status-badge').innerHTML = `<span class="badge ${statusBadges[r.status] || 'bg-secondary'} fs-6">${r.status}</span>`;
+
+        const priorityBadges = {
+          'CRITICAL': 'badge-priority-CRITICAL',
+          'HIGH': 'badge-priority-HIGH',
+          'MEDIUM': 'badge-priority-MEDIUM',
+          'LOW': 'badge-priority-LOW'
+        };
+        document.getElementById('detail-priority-badge').innerHTML = `<span class="badge ${priorityBadges[r.priority] || 'badge-priority-LOW'} fs-6">${r.priority || 'MEDIUM'}</span>`;
+
+        // Verification State
+        if (r.verificationDetails && r.verificationDetails.verified) {
+          document.getElementById('detail-verification-badge').innerHTML = '<span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-patch-check-fill me-1"></i>Verified</span>';
+        } else if (r.status === 'REJECTED') {
+          document.getElementById('detail-verification-badge').innerHTML = '<span class="badge bg-danger-subtle text-danger border border-danger">Rejected</span>';
+        } else {
+          document.getElementById('detail-verification-badge').innerHTML = '<span class="badge bg-secondary">Pending Verification</span>';
+        }
+
+        // Duplicate State
+        if (r.isDuplicate) {
+          document.getElementById('detail-duplicate-badge').innerHTML = `<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Duplicate of ${r.duplicateOf || 'nearby'}</span>`;
+        } else {
+          document.getElementById('detail-duplicate-badge').innerHTML = '<span class="badge bg-light text-muted border">Original Incident</span>';
+        }
+
+        // Resolution Card
+        const resCard = document.getElementById('resolution-details-card');
+        if (r.status === 'COMPLETED' && r.resolutionDetails) {
+          resCard.classList.remove('d-none');
+          document.getElementById('resolution-notes-text').textContent = r.resolutionDetails.notes || 'Drain cleared and flow restored.';
+          const compDate = r.resolutionDetails.completedAt ? new Date(r.resolutionDetails.completedAt).toLocaleString('en-IN') : 'Recently';
+          document.getElementById('resolution-meta-text').textContent = `Completed by: ${r.resolutionDetails.completedByName || 'Municipal Authority'} on ${compDate}`;
+        } else {
+          resCard.classList.add('d-none');
+        }
+
+        // Section 7: Stepper Timeline (BUG-FREE: safe transitions without classList.add(''))
+        const steps = ['SUBMITTED', 'UNDER INSPECTION', 'CLEANING STARTED', 'COMPLETED'];
+        const stepIds = ['step-submitted', 'step-inspection', 'step-cleaning', 'step-completed'];
+        const currentIdx = steps.indexOf(r.status);
+        const progressPct = currentIdx >= 0 ? (currentIdx / (steps.length - 1)) * 100 : 0;
+        document.getElementById('stepper-progress').style.width = `${progressPct}%`;
+
+        stepIds.forEach((id, idx) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.classList.remove('active', 'completed');
+          if (currentIdx > idx) {
+            el.classList.add('completed');
+          } else if (currentIdx === idx) {
+            el.classList.add('active');
+          }
+        });
+
+        // Section 5: Risk
+        const riskBadges = {
+          'HIGH': 'badge-risk-high',
+          'MEDIUM': 'badge-risk-medium',
+          'LOW': 'badge-risk-low'
+        };
+        document.getElementById('detail-risk-badge').innerHTML = `
+          <span class="badge-risk ${riskBadges[r.riskLevel] || 'badge-risk-low'} fs-6">${r.riskLevel || 'LOW'} RISK</span>
+        `;
+        document.getElementById('detail-risk-score').textContent = `${r.riskScore || 0} / 100`;
+        const pbar = document.getElementById('detail-risk-progress');
+        pbar.style.width = `${r.riskScore || 0}%`;
+        if (r.riskScore > 60) pbar.className = 'progress-bar bg-danger';
+        else if (r.riskScore > 30) pbar.className = 'progress-bar bg-warning';
+        else pbar.className = 'progress-bar bg-success';
+
+        const reasonsUl = document.getElementById('detail-risk-reasons');
+        reasonsUl.innerHTML = '';
+        (r.riskReasons || []).forEach(reason => {
+          const li = document.createElement('li');
+          li.className = 'list-group-item px-0 py-2 d-flex align-items-center gap-2';
+          li.innerHTML = `<i class="bi bi-arrow-right-circle text-primary"></i><span>${reason}</span>`;
+          reasonsUl.appendChild(li);
+        });
+
+        // Section: Administrative Notes List
+        const adminNotesUl = document.getElementById('detail-admin-notes-list');
+        const notes = r.adminNotes || [];
+        document.getElementById('admin-notes-count').textContent = `${notes.length} note(s)`;
+        if (notes.length > 0) {
+          adminNotesUl.innerHTML = '';
+          notes.forEach(n => {
+            const nDate = new Date(n.createdAt).toLocaleDateString('en-IN', {
+              day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            const d = document.createElement('div');
+            d.className = 'p-2 bg-light rounded-2 mb-2 border-start border-3 border-primary';
+            d.innerHTML = `
+              <div class="d-flex justify-content-between small text-muted">
+                <strong>${n.authorName || 'Administrator'}</strong>
+                <span>${nDate}</span>
+              </div>
+              <div class="small text-dark mt-1">${n.note}</div>
+            `;
+            adminNotesUl.appendChild(d);
+          });
+        } else {
+          adminNotesUl.innerHTML = '<div class="text-muted small">No administrative notes recorded yet.</div>';
+        }
+
+        // Section 2: Photo Evidence Handling
+        const photoImg = document.getElementById('detail-photo');
+        const photoLoading = document.getElementById('photo-loading-spinner');
+        const photoEmpty = document.getElementById('photo-empty-state');
+        const photoError = document.getElementById('photo-error-state');
+        const photoBadge = document.getElementById('photo-status-badge');
+        const btnEnlarge = document.getElementById('btn-enlarge-photo');
+        const photoCaption = document.getElementById('detail-photo-caption');
+
+        // Reset display
+        photoImg.classList.add('d-none');
+        photoEmpty.classList.add('d-none');
+        photoError.classList.add('d-none');
+        photoLoading.classList.remove('d-none');
+        btnEnlarge.classList.add('d-none');
+
+        if (r.photoUrl && r.photoUrl.trim()) {
+          photoBadge.className = 'badge bg-primary';
+          photoBadge.textContent = 'Loading Evidence';
+
+          photoImg.onload = function() {
+            photoLoading.classList.add('d-none');
+            photoImg.classList.remove('d-none');
+            btnEnlarge.classList.remove('d-none');
+            photoBadge.className = 'badge bg-success';
+            photoBadge.textContent = 'Verified Evidence';
+            photoCaption.textContent = `Captured site photograph (${r.reportId})`;
+          };
+
+          photoImg.onerror = function() {
+            photoLoading.classList.add('d-none');
+            photoError.classList.remove('d-none');
+            photoBadge.className = 'badge bg-danger';
+            photoBadge.textContent = 'File Unreachable';
+            photoCaption.textContent = 'Photo file could not be retrieved from server storage.';
+          };
+
+          photoImg.src = r.photoUrl;
+        } else {
+          // Genuinely no photo attached
+          photoLoading.classList.add('d-none');
+          photoEmpty.classList.remove('d-none');
+          photoBadge.className = 'badge bg-secondary';
+          photoBadge.textContent = 'No Photo Attached';
+          photoCaption.textContent = 'No photographic evidence was submitted with this report.';
+        }
+
+        // Section 3: Location & Coordinates Handling
+        const hasValidCoords = (r.latitude != null && r.longitude != null && !isNaN(r.latitude) && !isNaN(r.longitude) && (r.latitude !== 0 || r.longitude !== 0));
+        const mapContainer = document.getElementById('detail-map');
+        const mapUnavailable = document.getElementById('map-unavailable-msg');
+
+        if (hasValidCoords) {
+          const lat = Number(r.latitude);
+          const lon = Number(r.longitude);
+          document.getElementById('detail-location-name').textContent = r.locationName || 'Confirmed Geographical Location';
+          document.getElementById('detail-coords').textContent = `Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)}`;
+          mapContainer.classList.remove('d-none');
+          mapUnavailable.classList.add('d-none');
+
+          if (reportMap) {
+            reportMap.remove();
+          }
+
+          reportMap = MapUtils.initMap('detail-map', { center: [lat, lon], zoom: 15 });
+          L.marker([lat, lon], {
+            icon: MapUtils.createIcon(MapUtils.getRiskColor(r.riskLevel, r.status))
+          }).addTo(reportMap).bindPopup(`<strong>${r.reportId}</strong><br>${r.locationName || ''}`).openPopup();
+        } else {
+          document.getElementById('detail-location-name').textContent = r.locationName || 'Location unavailable for this report';
+          document.getElementById('detail-coords').textContent = 'Coordinates not recorded';
+          mapContainer.classList.add('d-none');
+          mapUnavailable.classList.remove('d-none');
+        }
+
+        // Section 8: Team
+        if (r.assignedTeamName) {
+          document.getElementById('detail-team-name').textContent = r.assignedTeamName;
+          document.getElementById('detail-team-status').textContent = 'Assigned for active maintenance dispatch';
+        } else {
+          document.getElementById('detail-team-name').textContent = 'Municipal Administration';
+          document.getElementById('detail-team-status').textContent = 'Managed directly by Municipal Admin';
+        }
+
+        // Section 10: Status history log
+        const historyContainer = document.getElementById('detail-status-history');
+        historyContainer.innerHTML = '';
+        (r.statusHistory || []).forEach(h => {
+          const hDate = new Date(h.changedAt).toLocaleDateString('en-IN', {
+            day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+          const item = document.createElement('div');
+          item.className = 'p-3 bg-light rounded-3 mb-2 border';
+          item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="badge ${statusBadges[h.toStatus] || 'bg-secondary'}">${h.toStatus}</span>
+              <span class="small text-muted">${hDate}</span>
+            </div>
+            <div class="small text-dark fw-semibold">${h.changedByName || 'System'} (${h.changedByRole || 'authority'})</div>
+            <div class="small text-muted mt-1">${h.notes || 'Status updated.'}</div>
+          `;
+          historyContainer.appendChild(item);
+        });
+
+      } catch (err) {
+        document.getElementById('loading-state').classList.add('d-none');
+        document.getElementById('error-state').textContent = err.message || 'Error loading report details';
+        document.getElementById('error-state').classList.remove('d-none');
+      }
+    }
+  </script>
+</body>
+</html>

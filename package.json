@@ -1,0 +1,33 @@
+{
+  "name": "urban-drain-monitor",
+  "version": "1.0.0",
+  "description": "Urban Flood Reporting & Smart Drain Monitoring System - Early Detection. Smart Analysis. Timely Action. Safer Cities.",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "setup-admin": "node scripts/setupAdmin.js",
+    "test": "node server/tests/system.test.js"
+  },
+  "keywords": [
+    "flood-monitoring",
+    "smart-city",
+    "drain-monitoring",
+    "urban-governance",
+    "risk-analysis"
+  ],
+  "author": "Computer Engineering IDEA LAB-II",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.8",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.5.1",
+    "multer": "^2.4.0",
+    "socket.io": "^4.8.4"
+  }
+}

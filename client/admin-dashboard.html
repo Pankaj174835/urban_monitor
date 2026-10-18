@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Municipal Admin Operations Dashboard - Urban Flood &amp; Smart Drain Monitor</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-light">
+
+  <div id="main-header"></div>
+
+  <div class="dashboard-wrapper">
+    <aside class="dashboard-sidebar" id="dashboard-sidebar"></aside>
+
+    <main class="dashboard-content">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+          <div class="d-flex align-items-center gap-2">
+            <h2 class="fw-bold text-dark mb-0">Municipal Operations Command Console</h2>
+          </div>
+          <p class="text-muted small mb-0 mt-1">Centralized drainage monitoring, complaint triage, maintenance dispatch, and risk analytics</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/manage-reports.html" class="btn btn-primary fw-bold shadow-sm">
+            <i class="bi bi-file-earmark-medical me-1"></i> All Citizen Reports
+          </a>
+          <a href="/risk-map.html" class="btn btn-outline-secondary fw-semibold">
+            <i class="bi bi-map me-1"></i> Field Map
+          </a>
+        </div>
+      </div>
+
+      <!-- 8 Operation Stat Cards (Backend Derived) -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+              <i class="bi bi-folder2-open"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="stat-total">0</div>
+              <div class="stat-label">Total Reports</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-info bg-opacity-10 text-info">
+              <i class="bi bi-clock-history"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="stat-submitted">0</div>
+              <div class="stat-label">Newly Submitted</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-purple bg-opacity-10 text-purple">
+              <i class="bi bi-search"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="stat-inspection">0</div>
+              <div class="stat-label">Under Inspection</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+              <i class="bi bi-tools"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="stat-cleaning">0</div>
+              <div class="stat-label">Cleaning Started</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-success bg-opacity-10 text-success">
+              <i class="bi bi-check2-circle"></i>
+            </div>
+            <div>
+              <div class="stat-val" id="stat-completed">0</div>
+              <div class="stat-label">Completed Work</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+              <i class="bi bi-exclamation-octagon-fill"></i>
+            </div>
+            <div>
+              <div class="stat-val text-danger" id="stat-high-risk">0</div>
+              <div class="stat-label">High-Risk Reports</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+              <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+            <div>
+              <div class="stat-val text-danger" id="stat-critical">0</div>
+              <div class="stat-label">Critical Priority</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+              <i class="bi bi-fire"></i>
+            </div>
+            <div>
+              <div class="stat-val text-warning" id="stat-hotspots">0</div>
+              <div class="stat-label">Recurring Hotspots</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Citizen Complaints Table Card -->
+      <div class="card card-custom p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="fw-bold text-dark mb-0">Recent Citizen Complaints</h5>
+            <div class="text-muted small">Live submissions across all municipal wards</div>
+          </div>
+          <a href="/manage-reports.html" class="btn btn-outline-primary btn-sm fw-bold">
+            View All Reports <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light small text-uppercase text-muted">
+              <tr>
+                <th>Photo</th>
+                <th>Report ID</th>
+                <th>Citizen</th>
+                <th>Problem</th>
+                <th>Location</th>
+                <th>Water</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody id="recent-reports-tbody">
+              <tr>
+                <td colspan="9" class="text-center py-3 text-muted small">Loading recent complaints from database...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Real Analytics Charts Grid (Chart.js) -->
+      <div class="row g-4 mb-4" id="analytics">
+        <!-- Chart 1: Reports by Problem Type -->
+        <div class="col-lg-6">
+          <div class="card card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold text-dark mb-0">Complaints by Problem Type</h6>
+              <span class="badge bg-light text-muted border">Distribution</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="chart-problem-types"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart 2: Complaint Status Workflow -->
+        <div class="col-lg-6">
+          <div class="card card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold text-dark mb-0">Complaint Resolution Pipeline</h6>
+              <span class="badge bg-light text-muted border">Lifecycle Stage</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="chart-status-counts"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart 3: AI Risk Level Classification -->
+        <div class="col-lg-6">
+          <div class="card card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold text-dark mb-0">Risk Classification Distribution</h6>
+              <span class="badge bg-light text-muted border">Explainable AI</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="chart-risk-distribution"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart 4: Reporting Timeline -->
+        <div class="col-lg-6">
+          <div class="card card-custom p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold text-dark mb-0">Recent Incident Reports Trend</h6>
+              <span class="badge bg-light text-muted border">Last 7 Days</span>
+            </div>
+            <div style="height: 260px; position: relative;">
+              <canvas id="chart-timeline"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!Auth.requireAuth(['admin'])) return;
+      Auth.renderSidebar('admin-dashboard');
+
+      try {
+        // Load overview stat cards
+        const overRes = await API.get('/api/admin/overview');
+        if (overRes.success && overRes.stats) {
+          const s = overRes.stats;
+          document.getElementById('stat-total').textContent = s.totalReports;
+          document.getElementById('stat-submitted').textContent = s.submitted;
+          document.getElementById('stat-inspection').textContent = s.underInspection;
+          document.getElementById('stat-cleaning').textContent = s.cleaningStarted;
+          document.getElementById('stat-completed').textContent = s.completed;
+          document.getElementById('stat-high-risk').textContent = s.highRiskReports;
+          document.getElementById('stat-critical').textContent = s.criticalPriorityReports;
+          document.getElementById('stat-hotspots').textContent = s.hotspotsCount;
+        }
+
+        // Load Recent Citizen Complaints
+        try {
+          const repRes = await API.get('/api/reports', { limit: 5 });
+          const tbody = document.getElementById('recent-reports-tbody');
+          const reports = repRes.reports || [];
+          if (reports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No citizen complaints currently recorded in database.</td></tr>';
+          } else {
+            tbody.innerHTML = '';
+            const statusBadges = {
+              'SUBMITTED': 'badge-status-SUBMITTED',
+              'UNDER INSPECTION': 'badge-status-UNDER_INSPECTION',
+              'CLEANING STARTED': 'badge-status-CLEANING_STARTED',
+              'COMPLETED': 'badge-status-COMPLETED',
+              'REJECTED': 'badge-status-REJECTED'
+            };
+            const priorityBadges = {
+              'CRITICAL': 'badge-priority-CRITICAL',
+              'HIGH': 'badge-priority-HIGH',
+              'MEDIUM': 'badge-priority-MEDIUM',
+              'LOW': 'badge-priority-LOW'
+            };
+            reports.forEach(r => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>
+                  ${r.photoUrl ? `
+                    <img src="${r.photoUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;">
+                  ` : `
+                    <div style="width:40px;height:40px;border-radius:6px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
+                      <i class="bi bi-camera-slash"></i>
+                    </div>
+                  `}
+                </td>
+                <td>
+                  <a href="/report-details.html?id=${r.reportId}" class="fw-bold font-monospace text-primary text-decoration-none">
+                    ${r.reportId}
+                  </a>
+                </td>
+                <td>
+                  <div class="fw-semibold text-dark small">${r.citizenName || 'Citizen'}</div>
+                  <div class="text-muted" style="font-size:0.75rem;">${r.citizenEmail || ''}</div>
+                </td>
+                <td class="small fw-semibold text-dark">${r.problemType || 'Drainage'}</td>
+                <td class="small text-truncate" style="max-width:180px;" title="${r.locationName || ''}">${r.locationName || 'Confirmed Location'}</td>
+                <td><span class="badge bg-light text-dark border">${r.waterLevel || 'Medium'}</span></td>
+                <td><span class="badge ${priorityBadges[r.priority] || 'badge-priority-LOW'}">${r.priority || 'MEDIUM'}</span></td>
+                <td><span class="badge-status ${statusBadges[r.status] || ''}">${r.status}</span></td>
+                <td class="text-end">
+                  <a href="/report-details.html?id=${r.reportId}" class="btn btn-sm btn-outline-primary fw-semibold">
+                    Manage
+                  </a>
+                </td>
+              `;
+              tbody.appendChild(tr);
+            });
+          }
+        } catch (repErr) {
+          console.warn('Recent reports fetch warning:', repErr);
+        }
+
+        // Load Chart.js analytics
+        const anaRes = await API.get('/api/analytics/dashboard');
+        if (anaRes.success && anaRes.charts) {
+          const c = anaRes.charts;
+
+          // Chart 1: Problem Types Doughnut
+          new Chart(document.getElementById('chart-problem-types'), {
+            type: 'doughnut',
+            data: {
+              labels: c.problemTypes.labels,
+              datasets: [{
+                data: c.problemTypes.data,
+                backgroundColor: ['#2563eb', '#0284c7', '#ea580c', '#d97706', '#64748b']
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+
+          // Chart 2: Status Bar
+          new Chart(document.getElementById('chart-status-counts'), {
+            type: 'bar',
+            data: {
+              labels: c.statusCounts.labels,
+              datasets: [{
+                label: 'Complaints',
+                data: c.statusCounts.data,
+                backgroundColor: ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#64748b'],
+                borderRadius: 6
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+          });
+
+          // Chart 3: Risk Distribution Pie
+          new Chart(document.getElementById('chart-risk-distribution'), {
+            type: 'pie',
+            data: {
+              labels: c.riskDistribution.labels,
+              datasets: [{
+                data: c.riskDistribution.data,
+                backgroundColor: ['#10b981', '#f59e0b', '#dc2626']
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: 'bottom' } }
+            }
+          });
+
+          // Chart 4: Timeline Line
+          new Chart(document.getElementById('chart-timeline'), {
+            type: 'line',
+            data: {
+              labels: c.timeline.labels,
+              datasets: [{
+                label: 'Submissions',
+                data: c.timeline.data,
+                borderColor: '#1d4ed8',
+                backgroundColor: 'rgba(29, 78, 216, 0.1)',
+                fill: true,
+                tension: 0.3
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
