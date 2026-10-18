@@ -57,6 +57,7 @@ exports.register = async (req, res, next) => {
     // Check duplicate email
     const existing = await User.findOne({ email: email.toLowerCase().trim() });
     if (existing) {
+      console.warn(`[Auth Controller] Registration rejected: Email ${email.toLowerCase().trim()} already registered.`);
       return res.status(400).json({
         success: false,
         message: 'An account with this email already exists. Please log in.'
@@ -87,6 +88,8 @@ exports.register = async (req, res, next) => {
     const userJson = user.toJSON ? user.toJSON() : { ...user };
     delete userJson.password;
 
+    console.log(`[Auth Controller] User registered successfully: ${user.email} (${user.role})`);
+
     res.status(201).json({
       success: true,
       message: `${assignedRole === 'admin' ? 'Municipal Admin' : 'Citizen'} registration successful.`,
@@ -94,6 +97,7 @@ exports.register = async (req, res, next) => {
       user: userJson
     });
   } catch (err) {
+    console.error('[Auth Controller] Registration error:', err.message);
     next(err);
   }
 };
@@ -106,14 +110,17 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
+      console.warn('[Auth Controller] Login rejected: Missing email or password.');
       return res.status(400).json({
         success: false,
         message: 'Please provide both email and password.'
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
+      console.warn(`[Auth Controller] Login failed: User not found for email "${cleanEmail}"`);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password credentials.'
@@ -122,6 +129,7 @@ exports.login = async (req, res, next) => {
 
     // Role check: Only citizen and admin are permitted
     if (user.role !== 'citizen' && user.role !== 'admin') {
+      console.warn(`[Auth Controller] Login blocked for ${cleanEmail}: Role '${user.role}' not permitted.`);
       return res.status(403).json({
         success: false,
         message: 'Access restricted: Only Citizen and Municipal Admin roles are supported.'
@@ -141,6 +149,7 @@ exports.login = async (req, res, next) => {
     }
 
     if (!isMatch) {
+      console.warn(`[Auth Controller] Login failed: Invalid password for user "${cleanEmail}"`);
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password credentials.'
@@ -158,6 +167,8 @@ exports.login = async (req, res, next) => {
 
     const userJson = user.toJSON ? user.toJSON() : { ...user };
     delete userJson.password;
+
+    console.log(`[Auth Controller] Login successful: ${user.email} (${user.role})`);
 
     res.status(200).json({
       success: true,

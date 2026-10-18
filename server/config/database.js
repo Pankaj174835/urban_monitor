@@ -174,7 +174,11 @@ const connectDB = async () => {
       console.error(`================================================================`);
       console.error(`[Database] Connection Status: FAILED`);
       console.error(`[Database] Error: ${err.message}`);
-      console.error(`[Database] Real database connection could not be established.`);
+      if (err.message && (err.message.includes('timed out') || err.message.includes('buffering') || err.message.includes('selection'))) {
+        console.error(`[Database Diagnostic Hint] Connection timed out. Common causes:`);
+        console.error(`  1. MongoDB Atlas Network Access: Make sure IP 0.0.0.0/0 is whitelisted in MongoDB Atlas.`);
+        console.error(`  2. Environment Variables: Verify MONGODB_URI is correctly defined in Vercel Project Settings.`);
+      }
       console.error(`================================================================`);
       throw err;
     }

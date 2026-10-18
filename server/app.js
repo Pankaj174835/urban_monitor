@@ -30,6 +30,24 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
+// Request Debug & Tracing Middleware
+// Logs every incoming HTTP request and response status/duration in Vercel function logs
+app.use((req, res, next) => {
+  const start = Date.now();
+  const reqId = Math.random().toString(36).substring(2, 7);
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || req.ip;
+
+  console.log(`[REQ ${reqId}] --> ${req.method} ${req.originalUrl} | IP: ${clientIp}`);
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const level = res.statusCode >= 500 ? 'ERROR' : (res.statusCode >= 400 ? 'WARN' : 'INFO');
+    console.log(`[RES ${reqId}] <-- ${req.method} ${req.originalUrl} | Status: ${res.statusCode} | ${duration}ms [${level}]`);
+  });
+
+  next();
+});
+
 // Serverless Database Connection Middleware
 // Ensures MongoDB Atlas is actively connected before processing any incoming request
 app.use(async (req, res, next) => {
@@ -37,7 +55,7 @@ app.use(async (req, res, next) => {
     const { connectDB } = require('./config/database');
     await connectDB();
   } catch (err) {
-    console.error('[Database Middleware] Connection error:', err.message);
+    console.error(`[Database Middleware] Connection error for ${req.method} ${req.originalUrl}:`, err.message);
   }
   next();
 });

@@ -45,8 +45,10 @@ const fileFilter = (req, file, cb) => {
   const isExtValid = allowedExts.includes(ext);
 
   if (isMimeValid && isExtValid) {
+    console.log(`[Upload Middleware] File accepted: ${file.originalname || 'camera-capture.jpg'} (${file.mimetype})`);
     return cb(null, true);
   } else {
+    console.warn(`[Upload Middleware] File rejected: ${file.originalname || 'unknown'} (${file.mimetype}). Allowed types: JPG, PNG, WebP.`);
     cb(new Error('Invalid file format. Only JPG, JPEG, PNG, and WebP images are allowed.'));
   }
 };

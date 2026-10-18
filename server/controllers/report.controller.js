@@ -214,6 +214,8 @@ exports.createReport = async (req, res, next) => {
       console.warn('[Report] Risk engine notice:', bgErr.message);
     }
 
+    console.log(`[Report Controller] New report created successfully: ${reportId} (${problemType} at ${locationName}, Risk: ${riskAnalysis.riskLevel}, Priority: ${priorityAnalysis.priority})`);
+
     res.status(201).json({
       success: true,
       message: 'Report submitted successfully.',
@@ -221,6 +223,7 @@ exports.createReport = async (req, res, next) => {
       report: newReport
     });
   } catch (err) {
+    console.error('[Report Controller] Failed to create report:', err.message);
     next(err);
   }
 };

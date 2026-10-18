@@ -17,6 +17,7 @@ const authenticate = async (req, res, next) => {
     }
 
     if (!token) {
+      console.warn(`[Auth Middleware] No token provided for ${req.method} ${req.originalUrl}`);
       return res.status(401).json({
         success: false,
         message: 'Authentication required. Please log in to continue.'
@@ -27,6 +28,7 @@ const authenticate = async (req, res, next) => {
     const user = await User.findById(decoded.id);
 
     if (!user) {
+      console.warn(`[Auth Middleware] User ID ${decoded.id} from token not found in database for ${req.method} ${req.originalUrl}`);
       return res.status(401).json({
         success: false,
         message: 'Invalid session or user no longer exists.'
@@ -36,6 +38,7 @@ const authenticate = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
+    console.warn(`[Auth Middleware] Token verification failed for ${req.method} ${req.originalUrl}: ${err.message}`);
     return res.status(401).json({
       success: false,
       message: 'Invalid or expired authentication token. Please log in again.'
@@ -49,6 +52,7 @@ const authenticate = async (req, res, next) => {
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
+      console.warn(`[Auth Middleware] Forbidden: user ${req.user ? req.user.email : 'anonymous'} (role: ${req.user ? req.user.role : 'none'}) attempted to access restricted route ${req.method} ${req.originalUrl}. Allowed: [${roles.join(', ')}]`);
       return res.status(403).json({
         success: false,
         message: `Forbidden: Access restricted to [${roles.join(', ')}] roles.`

@@ -1,10 +1,7 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "client/**"
-    }
-  },
+  "outputDirectory": "client",
   "rewrites": [
     {
       "source": "/api",
@@ -19,85 +16,68 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/assets/(.*)",
-      "destination": "/client/assets/$1"
-    },
-    {
-      "source": "/",
-      "destination": "/client/index.html"
-    },
-    {
-      "source": "/index",
-      "destination": "/client/index.html"
-    },
-    {
       "source": "/login",
-      "destination": "/client/login.html"
+      "destination": "/login.html"
     },
     {
       "source": "/register",
-      "destination": "/client/register.html"
+      "destination": "/register.html"
     },
     {
       "source": "/citizen-dashboard",
-      "destination": "/client/citizen-dashboard.html"
+      "destination": "/citizen-dashboard.html"
     },
     {
       "source": "/admin-dashboard",
-      "destination": "/client/admin-dashboard.html"
+      "destination": "/admin-dashboard.html"
     },
     {
       "source": "/maintenance-dashboard",
-      "destination": "/client/maintenance-dashboard.html"
+      "destination": "/maintenance-dashboard.html"
     },
     {
       "source": "/report-problem",
-      "destination": "/client/report-problem.html"
+      "destination": "/report-problem.html"
     },
     {
       "source": "/report-details",
-      "destination": "/client/report-details.html"
+      "destination": "/report-details.html"
     },
     {
       "source": "/my-reports",
-      "destination": "/client/my-reports.html"
+      "destination": "/my-reports.html"
     },
     {
       "source": "/manage-reports",
-      "destination": "/client/manage-reports.html"
+      "destination": "/manage-reports.html"
     },
     {
       "source": "/manage-teams",
-      "destination": "/client/manage-teams.html"
+      "destination": "/manage-teams.html"
     },
     {
       "source": "/hotspots",
-      "destination": "/client/hotspots.html"
+      "destination": "/hotspots.html"
     },
     {
       "source": "/risk-map",
-      "destination": "/client/risk-map.html"
+      "destination": "/risk-map.html"
     },
     {
       "source": "/notifications",
-      "destination": "/client/notifications.html"
+      "destination": "/notifications.html"
     },
     {
       "source": "/prevention-insights",
-      "destination": "/client/prevention-insights.html"
+      "destination": "/prevention-insights.html"
     },
     {
       "source": "/sustainability",
-      "destination": "/client/sustainability.html"
+      "destination": "/sustainability.html"
     },
     {
       "source": "/about",
-      "destination": "/client/about.html"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/client/$1"
+      "destination": "/about.html"
     }
   ]
 }
-
