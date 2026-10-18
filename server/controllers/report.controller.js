@@ -89,7 +89,12 @@ exports.createReport = async (req, res, next) => {
     // Photo validation: Live camera captured image
     let photoUrl = '';
     if (req.file) {
-      photoUrl = `/uploads/${req.file.filename}`;
+      if (req.file.buffer) {
+        const mime = req.file.mimetype || 'image/jpeg';
+        photoUrl = `data:${mime};base64,${req.file.buffer.toString('base64')}`;
+      } else {
+        photoUrl = `/uploads/${req.file.filename}`;
+      }
     } else if (req.body.photoUrl && (req.body.photoUrl.startsWith('/uploads/') || req.body.photoUrl.startsWith('data:image/'))) {
       photoUrl = req.body.photoUrl;
     } else {

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 let isMongo = false;
+let connPromise = null;
 let dbDetails = {
   status: 'DISCONNECTED',
   mode: 'uninitialized',
@@ -108,66 +109,78 @@ async function ensureCollectionsAndIndexes() {
  * Connect to MongoDB with accurate status reporting
  */
 const connectDB = async () => {
-  if (mongoose.connection.readyState === 1 && isMongo) {
-    return;
-  }
-
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/urban_drain_monitor';
-  const targetDbName = process.env.MONGODB_DB_NAME || 'urban_drain_monitor';
-
-  console.log(`================================================================`);
-  console.log(`[Database] Initiating connection to MongoDB...`);
-  console.log(`[Database] Target URI: ${sanitizeUri(mongoUri)}`);
-  console.log(`[Database] Target Database: ${targetDbName}`);
-
-  try {
-    await mongoose.connect(mongoUri, {
-      dbName: targetDbName,
-      serverSelectionTimeoutMS: 8000
-    });
-
+  if (mongoose.connection.readyState === 1) {
     isMongo = true;
-    const activeHost = mongoose.connection.host || 'MongoDB Cluster';
-    const activeDbName = mongoose.connection.name || targetDbName;
-
-    dbDetails = {
-      status: 'CONNECTED',
-      mode: 'mongodb',
-      host: activeHost,
-      dbName: activeDbName,
-      collections: []
-    };
-
-    console.log(`[Database] Connection Status: CONNECTED`);
-    console.log(`[Database] Host: ${activeHost}`);
-    console.log(`[Database] Active Database: ${activeDbName}`);
-
-    // Ensure collections and indexes exist without demo data injection
-    const counts = await ensureCollectionsAndIndexes();
-
-    console.log(`[Database] Verified Collections & Record Counts:`);
-    for (const [col, count] of Object.entries(counts)) {
-      console.log(`  - ${col.padEnd(16)}: ${count} record(s)`);
-    }
-    console.log(`[Database] Mode: MONGODB ATLAS (Cloud Database Active & Operational)`);
-    console.log(`================================================================`);
-  } catch (err) {
-    isMongo = false;
-    dbDetails = {
-      status: 'FAILED',
-      mode: 'disconnected',
-      host: '',
-      dbName: targetDbName,
-      error: err.message,
-      collections: []
-    };
-
-    console.error(`================================================================`);
-    console.error(`[Database] Connection Status: FAILED`);
-    console.error(`[Database] Error: ${err.message}`);
-    console.error(`[Database] Real database connection could not be established.`);
-    console.error(`================================================================`);
+    return mongoose.connection;
   }
+
+  if (connPromise) {
+    return connPromise;
+  }
+
+  connPromise = (async () => {
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/urban_drain_monitor';
+    const targetDbName = process.env.MONGODB_DB_NAME || 'urban_drain_monitor';
+
+    console.log(`================================================================`);
+    console.log(`[Database] Initiating connection to MongoDB...`);
+    console.log(`[Database] Target URI: ${sanitizeUri(mongoUri)}`);
+    console.log(`[Database] Target Database: ${targetDbName}`);
+
+    try {
+      await mongoose.connect(mongoUri, {
+        dbName: targetDbName,
+        serverSelectionTimeoutMS: 8000
+      });
+
+      isMongo = true;
+      const activeHost = mongoose.connection.host || 'MongoDB Cluster';
+      const activeDbName = mongoose.connection.name || targetDbName;
+
+      dbDetails = {
+        status: 'CONNECTED',
+        mode: 'mongodb',
+        host: activeHost,
+        dbName: activeDbName,
+        collections: []
+      };
+
+      console.log(`[Database] Connection Status: CONNECTED`);
+      console.log(`[Database] Host: ${activeHost}`);
+      console.log(`[Database] Active Database: ${activeDbName}`);
+
+      // Ensure collections and indexes exist without demo data injection
+      const counts = await ensureCollectionsAndIndexes();
+
+      console.log(`[Database] Verified Collections & Record Counts:`);
+      for (const [col, count] of Object.entries(counts)) {
+        console.log(`  - ${col.padEnd(16)}: ${count} record(s)`);
+      }
+      console.log(`[Database] Mode: MONGODB ATLAS (Cloud Database Active & Operational)`);
+      console.log(`================================================================`);
+      return mongoose.connection;
+    } catch (err) {
+      isMongo = false;
+      connPromise = null;
+      dbDetails = {
+        status: 'FAILED',
+        mode: 'disconnected',
+        host: '',
+        dbName: targetDbName,
+        error: err.message,
+        collections: []
+      };
+
+      console.error(`================================================================`);
+      console.error(`[Database] Connection Status: FAILED`);
+      console.error(`[Database] Error: ${err.message}`);
+      console.error(`[Database] Real database connection could not be established.`);
+      console.error(`================================================================`);
+      throw err;
+    }
+  })();
+
+  return connPromise;
 };
 
 const getDbMode = () => (isMongo ? 'mongodb' : 'disconnected');

@@ -18,14 +18,29 @@ const errorHandler = require('./middleware/error.middleware');
 
 const app = express();
 
+// Trust reverse proxy for accurate client IP resolution and HTTPS cookies on Vercel
+app.set('trust proxy', 1);
+
 // Security and utility middleware
 app.use(cors({
   origin: true,
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// Serverless Database Connection Middleware
+// Ensures MongoDB Atlas is actively connected before processing any incoming request
+app.use(async (req, res, next) => {
+  try {
+    const { connectDB } = require('./config/database');
+    await connectDB();
+  } catch (err) {
+    console.error('[Database Middleware] Connection error:', err.message);
+  }
+  next();
+});
 
 // Rate Limiter
 const apiLimiter = rateLimit({
@@ -33,6 +48,7 @@ const apiLimiter = rateLimit({
   max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   message: {
     success: false,
     message: 'Too many requests from this IP. Please try again after 15 minutes.'
@@ -42,6 +58,9 @@ app.use('/api', apiLimiter);
 
 // Serve uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', (req, res) => {
+  res.status(404).json({ success: false, message: 'Upload not found on server.' });
+});
 
 // Serve frontend client
 app.use(express.static(path.join(__dirname, '../client')));

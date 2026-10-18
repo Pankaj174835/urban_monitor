@@ -4,10 +4,14 @@
   "description": "Urban Flood Reporting & Smart Drain Monitoring System - Early Detection. Smart Analysis. Timely Action. Safer Cities.",
   "main": "server/server.js",
   "scripts": {
+    "build": "echo 'Ready for Vercel deployment'",
     "start": "node server/server.js",
     "dev": "node server/server.js",
     "setup-admin": "node scripts/setupAdmin.js",
     "test": "node server/tests/system.test.js"
+  },
+  "engines": {
+    "node": ">=18.x"
   },
   "keywords": [
     "flood-monitoring",
